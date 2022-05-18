@@ -61,9 +61,9 @@ if isrelative:
 	figw_inches = TWOCOLUMN_WIDTH_INCHES*.6
 else:
 	if quarterly:
-		filename = '{0:s}/forecast_quarterly_{1:s}_{2:s}.nc4'.format(dirs['SFE_forecast'],str(inityear).zfill(4),str(initmonth).zfill(2))
+		filename = '{0:s}/forecast_quarterly_{1:s}_{2:d}.nc4'.format(dirs['SFE_forecast'],str(inityear).zfill(4),initmonth)
 	else:
-		filename = '{0:s}/forecast_{1:s}_{2:s}.nc4'.format(dirs['SFE_forecast'],str(inityear).zfill(4),str(initmonth).zfill(2))
+		filename = '{0:s}/forecast_{1:s}_{2:d}.nc4'.format(dirs['SFE_forecast'],str(inityear).zfill(4),initmonth)
 	figw_inches = TWOCOLUMN_WIDTH_INCHES*.8
 
 # Check for existence and abort if the file does not exist:

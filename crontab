@@ -1,1 +1,1 @@
-0 * 13-20 * * sh /projects/NS9001K/owul/projects/cf_monthly_forecast/cf_monthly_forecast/automation.sh >> /projects/NS9001K/owul/projects/cf_monthly_forecast/logs/cron.log 2>&1
+*/30 * 13-20 * * sh /projects/NS9001K/owul/projects/cf_monthly_forecast/cf_monthly_forecast/automation.sh >> /projects/NS9001K/owul/projects/cf_monthly_forecast/logs/cron.log 2>&1
