@@ -1,3 +1,6 @@
+# Arguments used for plotting in 002_forecast_plots.py
+# comment out unwanted options
+
 import numpy as np
 from cmcrameri import cm
 import cmocean.cm as cmo
