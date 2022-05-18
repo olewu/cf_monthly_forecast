@@ -6,7 +6,7 @@ CF_monthly_forecast
 <!-- [![conda-forge](https://img.shields.io/conda/dn/conda-forge/cf_monthly_forecast?label=conda-forge)](https://anaconda.org/conda-forge/cf_monthly_forecast) -->[![Documentation Status](https://readthedocs.org/projects/cf_monthly_forecast/badge/?version=latest)](https://cf_monthly_forecast.readthedocs.io/en/latest/?badge=latest)
 
 
-production of Climate Futures monthly multi-model forecasts and visualization
+Production of Climate Futures monthly multi-model forecasts and visualization (currently working on Sigma2's NIRD server)
 
 --------
 
