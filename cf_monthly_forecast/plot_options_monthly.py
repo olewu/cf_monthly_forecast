@@ -48,7 +48,7 @@ cvs = {
 
 cmapnames = {
 	'ExceedQ33'						: {'t2':cm.oslo_r,'pr':cmo.turbid,'wsp':cm.grayC},
-	'ExceedQ50'						: {'t2':cm.roma_r,'pr':cm.broc_r,'wsp':cm.vik},
+	'ExceedQ50'						: {'t2':cm.vik,'pr':cm.broc_r,'wsp':cm.roma_r},
 	'ExceedQ67'						: {'t2':cm.lajolla,'pr':cm.bamako_r,'wsp':cm.acton_r},
 	'temperature_exceedance'		: 'YlOrRd',
 	'total_precipitation_exceedance': 'YlOrRd'

@@ -310,7 +310,7 @@ try:
 							t += '\nCMCC (%s)'%{'no':'Italia','en':'Italy'}[lang]
 							t += '\nMétéo France (%s)'%{'no':'Frankrike','en':'France'}[lang]
 							t += '\nDWD (%s)'%{'no':'Tyskland','en':'Germany'}[lang]
-							t += '\n{0:s} {1:d}. {2:s}. {3:d}'.format({'no':'Utarbeidet','en':'Published'}[lang],today.day,pla.monthnames[lang][today.month-1],today.year)
+							t += '\n{0:s} {1:d} {2:s} {3:d}'.format({'no':'Utarbeidet','en':'Published'}[lang],today.day,pla.monthnames[lang][today.month-1],today.year)
 							plt.text(0.01,.91,t,fontsize=FS-4,**tkw)
 						plt.title(title,fontsize = FS-1)
 						desc = 'Probability (%)'
