@@ -9,9 +9,9 @@ import sys
 
 # project specific configurations:
 from cf_monthly_forecast.config import *
-import cf_monthly_forecast.forecast_file_parameters as ffp
 import cf_monthly_forecast.plot_annotations as pla
 import cf_monthly_forecast.plot_options_monthly as pom
+from cf_monthly_forecast.utils import get_varnums,split_longname_into_varnames
 
 # data access
 from netCDF4 import Dataset
@@ -93,6 +93,11 @@ try:
 	lon = ds.variables['lon'][:]
 	lat = ds.variables['lat'][:]
 	lon,lat = np.meshgrid(lon,lat)
+
+
+	#--------------------DERIVE VARIABLE POINTERS (NAME --> INDEX IN ARRAY)--------------------#
+	# derive a dictionary pointing from the required variable to the corresponding index in the dataset:
+	variablenumber = get_varnums(split_longname_into_varnames(ds),pom.variables)
 
 
 	#--------------------FORECAST MONTHS TO LOOP OVER--------------------#
@@ -182,14 +187,14 @@ try:
 				for model in pom.models:
 					a = None
 					if quarterly:
-						a = ds.variables[model][ffp.variablenumber[variable],:,:]
+						a = ds.variables[model][variablenumber[variable],:,:]
 					if a is None:
 						idx = fcmonth-initmonth-1
 						if idx<0:
 							idx += 12
 						print('\tfcmonth: {0:d} initmonth: {1:d} idx: {2:d}'.format(fcmonth,initmonth,idx))
 						try:
-							a = ds.variables[model][ffp.variablenumber[variable],idx,:,:]
+							a = ds.variables[model][variablenumber[variable],idx,:,:]
 						except:
 							#raise
 							a = ds.variables[model][idx,:,:]
