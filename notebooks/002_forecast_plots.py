@@ -305,8 +305,8 @@ try:
 								'verticalalignment':'top',
 								'transform':ax.transAxes
 							}
-							t = '%s Seasonal Forecasting Engine'%{'no':'Varsel fra','en':'Forecast from'}[lang]
-							t += '\n%s Climate Futures'%{'no':'og','en':'and'}[lang]
+							t = '%s'%{'no':'Varsel fra','en':'Forecast from'}[lang]
+							t += ' Climate Futures'
 							plt.text(0.01,.99,t,fontweight='bold',fontsize=FS-2,**tkw)
 							t = {'no':'Finansiert av Forskningsrådet','en':'Funded by the Research Council of Norway'}[lang]
 							t += '\n%s:'%{'no':'Basert på data fra','en':'Based on data from'}[lang]
@@ -315,8 +315,9 @@ try:
 							t += '\nCMCC (%s)'%{'no':'Italia','en':'Italy'}[lang]
 							t += '\nMétéo France (%s)'%{'no':'Frankrike','en':'France'}[lang]
 							t += '\nDWD (%s)'%{'no':'Tyskland','en':'Germany'}[lang]
-							t += '\n{0:s} {1:d} {2:s} {3:d}'.format({'no':'Utarbeidet','en':'Published'}[lang],today.day,pla.monthnames[lang][today.month-1],today.year)
-							plt.text(0.01,.91,t,fontsize=FS-4,**tkw)
+							t += '\nBjerknes Centre (%s)'%{'no':'Norge','en':'Norway'}[lang]
+							t += '\n{0:s} {1:d} {2:s} {3:d}'.format({'no':'Utarbeidet','en':'Produced'}[lang],today.day,pla.monthnames[lang][today.month-1],today.year)
+							plt.text(0.01,.94,t,fontsize=FS-4,**tkw)
 						plt.title(title,fontsize = FS-1)
 						desc = 'Probability (%)'
 						rightmargin = 0
