@@ -11,6 +11,7 @@ import sys
 from cf_monthly_forecast.config import *
 import cf_monthly_forecast.plot_annotations as pla
 import cf_monthly_forecast.plot_options_monthly as pom
+import cf_monthly_forecast.vis_config as vc
 
 # data access
 import xarray as xr
@@ -21,6 +22,7 @@ import numpy as np
 from scipy import interpolate
 from datetime import datetime
 from calendar import monthrange
+from cf_monthly_forecast.smooth2d import box_smooth_2D
 
 # plotting
 import matplotlib.pyplot as plt
@@ -52,7 +54,7 @@ model = 'ens_mean_anom'
 
 # get current date during time of running the script:
 today = datetime.today()
-# today = datetime(2022,6,15)
+# today = datetime(2022,7,15)
 initmonth = today.month
 inityear = today.year
 
@@ -102,6 +104,8 @@ try:
     # create a folder for the initialization if it doesn't already exist:
     if not os.path.exists(figdir):
         os.makedirs(figdir,exist_ok=False) # creates directories recursively!
+    if not os.path.exists(figdir + 'smoothed/'):
+        os.makedirs(figdir + 'smoothed/',exist_ok=False)
 
 
     for variable in plt_vars:
@@ -133,52 +137,18 @@ try:
         for fcmonth,fcyear in zip(FCMONTH,FCYEAR):
             
             for area in pom.DOMAINS:
-                
-                if area == 'EUROPE_SMALL':
-                    lon0 = 0
-                    lon1 = 30
-                    lat0 = 54
-                    lat1 = 71.5
-                    bm = Basemap(
-                        resolution = 'i', 
-                        projection = 'gall',
-                        llcrnrlon = 0,
-                        llcrnrlat = 54,
-                        urcrnrlon = 30,
-                        urcrnrlat = 71.5,
-                        fix_aspect = False
-                    )
-                    aspectratio = 1.1
-                elif area == 'EUROPE':
-                    lon0 = -20
-                    lon1 = 50
-                    lat0 = 35
-                    lat1 = 72
-                    bm = Basemap(
-                        resolution = 'l', 
-                        projection = 'gall',
-                        llcrnrlon = -20.,
-                        llcrnrlat = 35.,
-                        urcrnrlon = 50.,
-                        urcrnrlat = 72.,
-                        fix_aspect = False
-                    )
-                    aspectratio = 1.5
-                elif area == 'GLOBAL':
-                    lon0 = -180
-                    lon1 = 180
-                    lat0 = -90
-                    lat1 = 90
-                    bm = Basemap(projection='moll',lon_0=0,resolution='c')
-                    aspectratio = 2.05
-                    
                 # weights:
                 glat0 = 40
                 glat1 = 70
                 gpoints = np.nonzero((LAT.ravel()>=glat0)&(LAT.ravel()<=glat1))[0]
                 gweights = np.cos(np.radians(LAT.ravel()[gpoints]))
                 gweights /= np.sum(gweights)
-                points = np.nonzero((LON.ravel()>=lon0)&(LON.ravel()<=lon1)&(LAT.ravel()>=lat0)&(LAT.ravel()<=lat1))[0]
+                points = np.nonzero(
+                    (LON.ravel() >= vc.area_specs[area]['lon0']) &
+                    (LON.ravel() <= vc.area_specs[area]['lon1']) &
+                    (LAT.ravel() >= vc.area_specs[area]['lat0']) &
+                    (LAT.ravel() <= vc.area_specs[area]['lat1'])
+                )[0]
                 weights = np.cos(np.radians(LAT.ravel()[points]))
                 weights /= np.sum(weights)
 
@@ -186,16 +156,20 @@ try:
                     lon2 = np.linspace(LON[0,0],LON[0,-1],LON.shape[1]*nsplines)
                     lat2 = np.linspace(LAT[0,0],LAT[-1,0],LAT.shape[0]*nsplines)
                     lon3,lat3 = np.meshgrid(lon2,lat2)
-                    xi,yi = bm(lon3,lat3)
+                    xi,yi = vc.area_specs[area]['bm'](lon3,lat3)
                 else:
-                    xi,yi = bm(LON,LAT)
-                    xp,yp = bm(LON-.25,LAT-.25)
+                    xi,yi = vc.area_specs[area]['bm'](LON,LAT)
+                    xp,yp = vc.area_specs[area]['bm'](LON-.25,LAT-.25)
             
                 if model == 'ens_mean_anom':
                     if variable == 'pr':
                         a = (ds.mean_standardized_anomaly * ds.sd_era).sel(target_month=fcmonth).values * units_tf_factor[variable] * monthrange(fcyear,fcmonth)[1]
                     else:
                         a = (ds.mean_standardized_anomaly * ds.sd_era).sel(target_month=fcmonth).values * units_tf_factor[variable]
+                # Smooth the anomaly fields:
+                a_sm9 = box_smooth_2D(a,1,1,latitude=LAT[:,0])
+                a_sm25 = box_smooth_2D(a,2,2,latitude=LAT[:,0])
+                
                 try:
                     cv = pom.cvs[model][variable][area]
                 except:
@@ -234,9 +208,10 @@ try:
                             )
                         }[lang]
 
+                    # Initialize Figure
                     fig = SubplotFigure(
                         figw_inches = figw_inches,
-                        aspectratio = aspectratio,
+                        aspectratio = vc.area_specs[area]['aspectratio'],
                         marginleft_inches = 0.05,
                         marginright_inches = 0.05,
                         margintop_inches = 0.45,
@@ -258,17 +233,17 @@ try:
                     hatches = [None]*(len(cv)-1)
                     # Plot probabilities:
                     cf = ax.contourf(xi,yi,a,cv,cmap=cmap,vmin=cv[0],vmax=cv[-1],hatches=hatches,extend='both')
-                    bm.drawcoastlines(linewidth=.5)
-                    bm.drawcountries(linewidth=.35,color='.5')
+                    vc.area_specs[area]['bm'].drawcoastlines(linewidth=.5)
+                    vc.area_specs[area]['bm'].drawcountries(linewidth=.35,color='.5')
                     if not area in ('GLOBAL',):
                         tkw = {
                             'horizontalalignment':'left',
                             'verticalalignment':'top',
                             'transform':ax.transAxes
                         }
-                        t = '%s'%{'no':'Varsel fra','en':'Forecast from'}[lang]
-                        t += ' Climate Futures'
-                        plt.text(0.01,.99,t,fontweight='bold',fontsize=FS-2,**tkw)
+                        t1 = '%s'%{'no':'Varsel fra','en':'Forecast from'}[lang]
+                        t1 += ' Climate Futures'
+                        plt.text(0.01,.99,t1,fontweight='bold',fontsize=FS-2,**tkw)
                         t = {'no':'Finansiert av Forskningsrådet','en':'Funded by the Research Council of Norway'}[lang]
                         t += '\n%s:'%{'no':'Basert på data fra','en':'Based on data from'}[lang]
                         t += '\nECMWF (%s)'%{'no':'Europa','en':'Europe'}[lang]
@@ -311,6 +286,128 @@ try:
 
                     fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
                     plt.close(fig.fig)
+
+                    #------------------PLOT SMOOTHED FIELD------------------#
+                    # Initialize Figure
+                    fig_sm1 = SubplotFigure(
+                        figw_inches = figw_inches,
+                        aspectratio = vc.area_specs[area]['aspectratio'],
+                        marginleft_inches = 0.05,
+                        marginright_inches = 0.05,
+                        margintop_inches = 0.45,
+                        marginbottom_inches = 0.05,
+                        cbar_height_inches = .15,
+                        cbar_bottompadding_inches = .25,
+                        cbar_toppadding_inches = .05,
+                        cbar_width_percent = 95.
+                    )
+                    ax_sm1 = fig_sm1.subplot(0)
+                    if nsplines:
+                        print('linearly interpolating data to {0:d}x the resolution'.format(nsplines))
+                        f1 = interpolate.interp2d(LON[0,:], LAT[:,0], a_sm9, kind='linear')
+                        a_sm9 = f1(lon2,lat2)
+                    spr = cv[-1]-cv[0]
+                    a_sm9[a_sm9<=cv[0]] = cv[0]+spr/1000.
+                    a_sm9[a_sm9>=cv[-1]] = cv[-1]-spr/1000.
+                    # Plot probabilities:
+                    cf_sm1 = ax_sm1.contourf(xi,yi,a_sm9,cv,cmap=cmap,vmin=cv[0],vmax=cv[-1],hatches=hatches,extend='both')
+                    vc.area_specs[area]['bm'].drawcoastlines(linewidth=.5)
+                    vc.area_specs[area]['bm'].drawcountries(linewidth=.35,color='.5')
+                    if not area in ('GLOBAL',):
+                        tkw = {
+                            'horizontalalignment':'left',
+                            'verticalalignment':'top',
+                            'transform':ax_sm1.transAxes
+                        }
+                        plt.text(0.01,.99,t1,fontweight='bold',fontsize=FS-2,**tkw)
+                        plt.text(0.01,.94,t,fontsize=FS-4,**tkw)
+                    plt.title(title,fontsize = FS-1)
+
+                    fig_sm1.draw_colorbar(
+                        mappable = cf_sm1,
+                        fontsize=FS-1, 
+                        cmap = cmap, 
+                        vmin = cv[0], 
+                        vmax = cv[-1],
+                        desc = desc,
+                        ticks = ticks,
+                        rightmargin = rightmargin,
+                        fmt = fmt,
+                        extend='both'
+                    )
+                    filename_sm1 = 'fc_{0:s}_{1:s}_{2:s}_{3:s}_{4:s}_9gpkernel'.format(
+                        variable,
+                        str(fcmonth).zfill(2),
+                        model,
+                        area,
+                        lang
+                    )
+                    
+                    print(filename_sm1)
+
+                    fig_sm1.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm1),dpi=300)
+                    plt.close(fig_sm1.fig)
+                    
+                    # 
+                    fig_sm2 = SubplotFigure(
+                        figw_inches = figw_inches,
+                        aspectratio = vc.area_specs[area]['aspectratio'],
+                        marginleft_inches = 0.05,
+                        marginright_inches = 0.05,
+                        margintop_inches = 0.45,
+                        marginbottom_inches = 0.05,
+                        cbar_height_inches = .15,
+                        cbar_bottompadding_inches = .25,
+                        cbar_toppadding_inches = .05,
+                        cbar_width_percent = 95.
+                    )
+                    ax_sm2 = fig_sm2.subplot(0)
+                    if nsplines:
+                        print('linearly interpolating data to {0:d}x the resolution'.format(nsplines))
+                        f2 = interpolate.interp2d(LON[0,:], LAT[:,0], a_sm25, kind='linear')
+                        a_sm25 = f2(lon2,lat2)
+                    spr = cv[-1]-cv[0]
+                    a_sm25[a_sm25<=cv[0]] = cv[0]+spr/1000.
+                    a_sm25[a_sm25>=cv[-1]] = cv[-1]-spr/1000.
+                    # Plot probabilities:
+                    cf_sm2 = ax_sm2.contourf(xi,yi,a_sm25,cv,cmap=cmap,vmin=cv[0],vmax=cv[-1],hatches=hatches,extend='both')
+                    vc.area_specs[area]['bm'].drawcoastlines(linewidth=.5)
+                    vc.area_specs[area]['bm'].drawcountries(linewidth=.35,color='.5')
+                    if not area in ('GLOBAL',):
+                        tkw = {
+                            'horizontalalignment':'left',
+                            'verticalalignment':'top',
+                            'transform':ax_sm2.transAxes
+                        }
+                        plt.text(0.01,.99,t1,fontweight='bold',fontsize=FS-2,**tkw)
+                        plt.text(0.01,.94,t,fontsize=FS-4,**tkw)
+                    plt.title(title,fontsize = FS-1)
+
+                    fig_sm1.draw_colorbar(
+                        mappable = cf_sm2,
+                        fontsize=FS-1, 
+                        cmap = cmap, 
+                        vmin = cv[0], 
+                        vmax = cv[-1],
+                        desc = desc,
+                        ticks = ticks,
+                        rightmargin = rightmargin,
+                        fmt = fmt,
+                        extend='both'
+                    )
+                    filename_sm2 = 'fc_{0:s}_{1:s}_{2:s}_{3:s}_{4:s}_25gpkernel'.format(
+                        variable,
+                        str(fcmonth).zfill(2),
+                        model,
+                        area,
+                        lang
+                    )
+                    
+                    print(filename_sm2)
+
+                    fig_sm2.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm2),dpi=300)
+                    plt.close(fig_sm2.fig)
+
         
         if variable == 'pr':
             print('relative anomalies')
@@ -318,52 +415,18 @@ try:
             for fcmonth,fcyear in zip(FCMONTH,FCYEAR):
 
                 for area in pom.DOMAINS:
-
-                    if area == 'EUROPE_SMALL':
-                        lon0 = 0
-                        lon1 = 30
-                        lat0 = 54
-                        lat1 = 71.5
-                        bm = Basemap(
-                            resolution = 'i', 
-                            projection = 'gall',
-                            llcrnrlon = 0,
-                            llcrnrlat = 54,
-                            urcrnrlon = 30,
-                            urcrnrlat = 71.5,
-                            fix_aspect = False
-                        )
-                        aspectratio = 1.1
-                    elif area == 'EUROPE':
-                        lon0 = -20
-                        lon1 = 50
-                        lat0 = 35
-                        lat1 = 72
-                        bm = Basemap(
-                            resolution = 'l', 
-                            projection = 'gall',
-                            llcrnrlon = -20.,
-                            llcrnrlat = 35.,
-                            urcrnrlon = 50.,
-                            urcrnrlat = 72.,
-                            fix_aspect = False
-                        )
-                        aspectratio = 1.5
-                    elif area == 'GLOBAL':
-                        lon0 = -180
-                        lon1 = 180
-                        lat0 = -90
-                        lat1 = 90
-                        bm = Basemap(projection='moll',lon_0=0,resolution='c')
-                        aspectratio = 2.05
-
                     # weights:
                     glat0 = 40
                     glat1 = 70
                     gpoints = np.nonzero((LAT.ravel()>=glat0)&(LAT.ravel()<=glat1))[0]
                     gweights = np.cos(np.radians(LAT.ravel()[gpoints]))
                     gweights /= np.sum(gweights)
-                    points = np.nonzero((LON.ravel()>=lon0)&(LON.ravel()<=lon1)&(LAT.ravel()>=lat0)&(LAT.ravel()<=lat1))[0]
+                    points = np.nonzero(
+                        (LON.ravel() >= vc.area_specs[area]['lon0']) &
+                        (LON.ravel() <= vc.area_specs[area]['lon1']) &
+                        (LAT.ravel() >= vc.area_specs[area]['lat0']) &
+                        (LAT.ravel() <= vc.area_specs[area]['lat1'])
+                    )[0]
                     weights = np.cos(np.radians(LAT.ravel()[points]))
                     weights /= np.sum(weights)
 
@@ -371,14 +434,17 @@ try:
                         lon2 = np.linspace(LON[0,0],LON[0,-1],LON.shape[1]*nsplines)
                         lat2 = np.linspace(LAT[0,0],LAT[-1,0],LAT.shape[0]*nsplines)
                         lon3,lat3 = np.meshgrid(lon2,lat2)
-                        xi,yi = bm(lon3,lat3)
+                        xi,yi = vc.area_specs[area]['bm'](lon3,lat3)
                     else:
-                        xi,yi = bm(LON,LAT)
-                        xp,yp = bm(LON-.25,LAT-.25)
+                        xi,yi = vc.area_specs[area]['bm'](LON,LAT)
+                        xp,yp = vc.area_specs[area]['bm'](LON-.25,LAT-.25)
                 
                     if model == 'ens_mean_anom':
                         a = (ds.mean_standardized_anomaly * ds.sd_era / ds.climatology_era).sel(target_month=fcmonth).values * 100
-                    
+                    # smooth the relative anomalies:
+                    a_sm9 = box_smooth_2D(a,1,1,latitude=LAT[:,0])
+                    a_sm25 = box_smooth_2D(a,2,2,latitude=LAT[:,0])
+
                     if area == 'EUROPE':
                         cv = np.linspace(-50,50,11)
                     elif area == 'GLOBAL':
@@ -416,7 +482,7 @@ try:
 
                         fig = SubplotFigure(
                             figw_inches = figw_inches,
-                            aspectratio = aspectratio,
+                            aspectratio = vc.area_specs[area]['aspectratio'],
                             marginleft_inches = 0.05,
                             marginright_inches = 0.05,
                             margintop_inches = 0.45,
@@ -441,17 +507,17 @@ try:
                         hatches = [None]*(len(cv)-1)
                         # Plot probabilities:
                         cf = ax.contourf(xi,yi,a,cv,cmap=cmap,vmin=cv[0],vmax=cv[-1],hatches=hatches,extend='both')
-                        bm.drawcoastlines(linewidth=.5)
-                        bm.drawcountries(linewidth=.35,color='.5')
+                        vc.area_specs[area]['bm'].drawcoastlines(linewidth=.5)
+                        vc.area_specs[area]['bm'].drawcountries(linewidth=.35,color='.5')
                         if not area in ('GLOBAL',):
                             tkw = {
                                 'horizontalalignment':'left',
                                 'verticalalignment':'top',
                                 'transform':ax.transAxes
                             }
-                            t = '%s'%{'no':'Varsel fra','en':'Forecast from'}[lang]
-                            t += ' Climate Futures'
-                            plt.text(0.01,.99,t,fontweight='bold',fontsize=FS-2,**tkw)
+                            t1 = '%s'%{'no':'Varsel fra','en':'Forecast from'}[lang]
+                            t1 += ' Climate Futures'
+                            plt.text(0.01,.99,t1,fontweight='bold',fontsize=FS-2,**tkw)
                             t = {'no':'Finansiert av Forskningsrådet','en':'Funded by the Research Council of Norway'}[lang]
                             t += '\n%s:'%{'no':'Basert på data fra','en':'Based on data from'}[lang]
                             t += '\nECMWF (%s)'%{'no':'Europa','en':'Europe'}[lang]
@@ -494,6 +560,129 @@ try:
 
                         fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
                         plt.close(fig.fig)
+
+                        #------------SMOOTHED FIELDS-----------#
+                        fig_sm1 = SubplotFigure(
+                            figw_inches = figw_inches,
+                            aspectratio = vc.area_specs[area]['aspectratio'],
+                            marginleft_inches = 0.05,
+                            marginright_inches = 0.05,
+                            margintop_inches = 0.45,
+                            marginbottom_inches = 0.05,
+                            cbar_height_inches = .15,
+                            cbar_bottompadding_inches = .25,
+                            cbar_toppadding_inches = .05,
+                            cbar_width_percent = 95.
+                        )
+                        ax_sm1 = fig_sm1.subplot(0)
+                        if nsplines:
+                            print('linearly interpolating data to {0:d}x the resolution'.format(nsplines))
+                            if np.isinf(a_sm9).sum() > 0:
+                                print('Some points are inf!')
+                            a_sm9[np.isinf(a_sm9)] = np.sign(a_sm9[np.isinf(a_sm9)]) * 999
+                            f1 = interpolate.interp2d(LON[0,:], LAT[:,0], a_sm9, kind='linear')
+                            a_sm9 = f1(lon2,lat2)
+                        spr = cv[-1]-cv[0]
+                        a_sm9[a_sm9<=cv[0]] = cv[0]+spr/1000.
+                        a_sm9[a_sm9>=cv[-1]] = cv[-1]-spr/1000.
+                        # Plot probabilities:
+                        cf_sm1 = ax_sm1.contourf(xi,yi,a_sm9,cv,cmap=cmap,vmin=cv[0],vmax=cv[-1],hatches=hatches,extend='both')
+                        vc.area_specs[area]['bm'].drawcoastlines(linewidth=.5)
+                        vc.area_specs[area]['bm'].drawcountries(linewidth=.35,color='.5')
+                        if not area in ('GLOBAL',):
+                            tkw = {
+                                'horizontalalignment':'left',
+                                'verticalalignment':'top',
+                                'transform':ax_sm1.transAxes
+                            }
+                            plt.text(0.01,.99,t1,fontweight='bold',fontsize=FS-2,**tkw)
+                            plt.text(0.01,.94,t,fontsize=FS-4,**tkw)
+                        plt.title(title,fontsize = FS-1)
+                        fig_sm1.draw_colorbar(
+                            mappable = cf_sm1,
+                            fontsize=FS-1, 
+                            cmap = cmap, 
+                            vmin = cv[0], 
+                            vmax = cv[-1],
+                            desc = desc,
+                            ticks = ticks,
+                            rightmargin = rightmargin,
+                            fmt = fmt,
+                            extend='both'
+                        )
+                        filename_sm1 = 'fc_{0:s}_{1:s}_rel_{2:s}_{3:s}_{4:s}_9gpkernel'.format(
+                            variable,
+                            str(fcmonth).zfill(2),
+                            model,
+                            area,
+                            lang
+                        )
+                        
+                        print(filename_sm1)
+
+                        fig_sm1.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm1),dpi=300)
+                        plt.close(fig_sm1.fig)
+
+                        fig_sm2 = SubplotFigure(
+                            figw_inches = figw_inches,
+                            aspectratio = vc.area_specs[area]['aspectratio'],
+                            marginleft_inches = 0.05,
+                            marginright_inches = 0.05,
+                            margintop_inches = 0.45,
+                            marginbottom_inches = 0.05,
+                            cbar_height_inches = .15,
+                            cbar_bottompadding_inches = .25,
+                            cbar_toppadding_inches = .05,
+                            cbar_width_percent = 95.
+                        )
+                        ax_sm2 = fig_sm2.subplot(0)
+                        if nsplines:
+                            print('linearly interpolating data to {0:d}x the resolution'.format(nsplines))
+                            if np.isinf(a_sm25).sum() > 0:
+                                print('Some points are inf!')
+                            a_sm25[np.isinf(a_sm25)] = np.sign(a_sm25[np.isinf(a_sm25)]) * 999
+                            f2 = interpolate.interp2d(LON[0,:], LAT[:,0], a_sm25, kind='linear')
+                            a_sm25 = f2(lon2,lat2)
+                        spr = cv[-1]-cv[0]
+                        a_sm25[a_sm25<=cv[0]] = cv[0]+spr/1000.
+                        a_sm25[a_sm25>=cv[-1]] = cv[-1]-spr/1000.
+                        # Plot probabilities:
+                        cf_sm2 = ax_sm2.contourf(xi,yi,a_sm25,cv,cmap=cmap,vmin=cv[0],vmax=cv[-1],hatches=hatches,extend='both')
+                        vc.area_specs[area]['bm'].drawcoastlines(linewidth=.5)
+                        vc.area_specs[area]['bm'].drawcountries(linewidth=.35,color='.5')
+                        if not area in ('GLOBAL',):
+                            tkw = {
+                                'horizontalalignment':'left',
+                                'verticalalignment':'top',
+                                'transform':ax_sm2.transAxes
+                            }
+                            plt.text(0.01,.99,t1,fontweight='bold',fontsize=FS-2,**tkw)
+                            plt.text(0.01,.94,t,fontsize=FS-4,**tkw)
+                        plt.title(title,fontsize = FS-1)
+                        fig_sm2.draw_colorbar(
+                            mappable = cf_sm2,
+                            fontsize=FS-1, 
+                            cmap = cmap, 
+                            vmin = cv[0], 
+                            vmax = cv[-1],
+                            desc = desc,
+                            ticks = ticks,
+                            rightmargin = rightmargin,
+                            fmt = fmt,
+                            extend='both'
+                        )
+                        filename_sm2 = 'fc_{0:s}_{1:s}_rel_{2:s}_{3:s}_{4:s}_25gpkernel'.format(
+                            variable,
+                            str(fcmonth).zfill(2),
+                            model,
+                            area,
+                            lang
+                        )
+                        
+                        print(filename_sm2)
+
+                        fig_sm2.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm2),dpi=300)
+                        plt.close(fig_sm2.fig)
         
     # write an index file if the script executes as expected:
     # only if no files are missing!
