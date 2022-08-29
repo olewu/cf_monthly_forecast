@@ -1,18 +1,32 @@
 # define some global parameters:
 
+import os
+
 # email address to send unexpected program failures to:
 email_address = 'owul@norceresearch.no'
 
 # base directory of the project:
 proj_base           = '/projects/NS9001K/owul/projects/cf_monthly_forecast'
+data_base           = '/projects/NS9853K/DATA/SFE'
 
 # other relevant locations:
 dirs = dict(
-    SFE_forecast    = '/projects/NS9853K/DATA/SFE/Forecasts',
-    test_data       = '{0:s}/data/raw'.format(proj_base),
+    SFE_forecast    = os.path.join(data_base,'Forecasts'),
+    test_data       = os.path.join(proj_base,'data/raw/'),
     public          = '/projects/NS9853K/www/',
-    figures         = '{0:s}/figures/'.format(proj_base)
+    figures         = os.path.join(proj_base,'figures/'),
+    inventory       = os.path.join(proj_base,'data/inventory/'),
+    cds_data        = os.path.join(data_base,'cds_seasonal_forecast')
 )
+
+model_init_mode = {
+    'burst'     : ['cmcc','ecmwf','eccc','dwd','meteo_france'],
+    'lagged'    : ['ukmo','jma','ncep']
+}
+
+# all available models:
+all_models = ['ukmo','ecmwf','meteo_france','dwd','cmcc','ncep','eccc','jma']
+# Note that the the last three models in this last are last on purpose. They aren't part of the MME as of now, so downloading them has lower priority!
 
 # map short names to long names:
 file_key = dict(

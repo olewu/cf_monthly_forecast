@@ -1,6 +1,9 @@
 import smtplib
-from cf_monthly_forecast.config import email_address 
+from cf_monthly_forecast.config import email_address, dirs
 import re
+import subprocess as sbp
+import os
+import cf_monthly_forecast.monthly_fc_input as mfin
 
 def send_email(SUBJECT,TEXT,TO=[email_address],FROM = email_address):
     """
@@ -72,3 +75,103 @@ def get_varnums(varlist,var_names):
         dct[key] = varlist.index(key_t)
     
     return dct
+
+
+def sysnum_from_grib(grib_file):
+    """
+    Infer the system number of a forecast in grib format from the file using grib_ls from ecCodes.
+    
+    -----WARNING-----
+    Assumes that this number is constant for all fields in the grib file!
+    -----------------
+
+    INPUT:  
+            grib_file:  path to an existing grib file (str)
+    OUTPUT: value of system keyword in the grib file (str)
+    """
+
+    p = sbp.Popen(['grib_ls', '-p','system',grib_file], stdout=sbp.PIPE, stderr=sbp.PIPE)
+    # retrieve output and error ('' if no error)
+    out, err = p.communicate()
+    # decode output from bytes to string:
+    out_str = out.decode('utf-8')
+    # search string for system number using regex:
+    system_number = re.search('\d+',out_str.split('\n')[2]).group()
+
+    return system_number
+
+def get_missing_hindcast_fields(model,system,month,mode='monthly'):
+    """
+    INPUT:
+            model       : modeling centre (str)
+            system      : system number (str)
+            initmonth   : initialization month (str)
+            mode        : monthly of subdaily (does not exist yet...) (str)
+    OUTPUT:
+            list of missing variables
+            list of missing years
+            full path of where look-up was done
+    """
+
+    if mode == 'monthly':
+        temp_res = mfin.temp_res
+        product = mfin.PRODUCT
+    # elif mode == 'subdaily':
+    #     temp_res = sdfin.temp_res
+    #     product = sdfin.PRODUCT
+
+    lookup_path = os.path.join(dirs['cds_data'],temp_res,product,model)
+    # create the directory tree if it doesn't exist already:
+    if not os.path.exists(lookup_path):
+        os.makedirs(lookup_path)
+
+    missing_years   = []
+    missing_vars    = []
+
+    for var in reduce_vars(model,mode=mode):
+        var_path = os.path.join(lookup_path,var)
+        # check if the path for the variable exists at all and create if this is not the case
+        if not os.path.exists(var_path):
+            os.makedirs(var_path)
+            missing_years.extend(list(mfin.hc_range))
+            missing_vars.append(var)
+        else:
+            # filename for variable:
+            hc_file = '{var:s}_{mod:s}_{sys:s}_?_{mon:s}.nc'.format(
+                var     = var,
+                mod     = model,
+                mon     = month,
+                sys     = system
+            )
+            
+            # collect missing years:
+            missing_years_var = []
+            for yy in mfin.hc_range:
+                year_file = hc_file.replace('_?_','_{:0<4d}_'.format(yy))
+                year_file_path = os.path.join(var_path,year_file)
+                if not os.path.exists(year_file_path):
+                    missing_years_var.append(yy)
+            if len(missing_years_var) > 0:
+                print(var)
+                missing_vars.append(var)
+                missing_years.extend(missing_years_var)
+
+    return missing_vars, missing_years, lookup_path
+
+
+
+def reduce_vars(model,mode='monthly'):
+    """
+    """
+
+    if mode == 'monthly':
+        variables_df = mfin.variables_df
+    # elif mode == 'subdaily':
+    #     variables_df = sdfin.variables_df
+
+    if model in ['ncep','jma']: # NCEP and JMA don't provide snowfall, so take these out the file list for request to succeed
+        variables_reduced = [vv for vv in variables_df.long_name if vv not in ['snowfall']]
+    else:
+        variables_reduced = variables_df.long_name.to_list()
+
+    return variables_reduced
