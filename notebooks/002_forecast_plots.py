@@ -330,7 +330,7 @@ try:
                         )
                         if quarterly:
                             filename += '_q'
-                        # fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
+                        fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
                         plt.close(fig.fig)
 
                         #-------------PLOT SMOOTHED FIELDS-------------#
