@@ -267,6 +267,6 @@ def split_grib(grib_file,mode='forecast',product_type='monthly',delete_input=Fal
 
 if __name__ == '__main__':
     # get today's date:
-    init = datetime(2022,3,1)
-    # init = datetime.today()
+    # init = datetime(2022,5,1)
+    init = datetime.today()
     main(init)
