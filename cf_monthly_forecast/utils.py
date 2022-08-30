@@ -159,7 +159,6 @@ def get_missing_hindcast_fields(model,system,month,mode='monthly'):
     return missing_vars, missing_years, lookup_path
 
 
-
 def reduce_vars(model,mode='monthly'):
     """
     """
