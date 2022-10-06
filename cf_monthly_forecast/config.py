@@ -52,3 +52,12 @@ units_tf_factor = dict(
     pr = 1000, # ERA5 precip from monthly averaged files is in m/day, so for mm accumulated over month, need to multiply by 1000 to get to mm and by nr of days in resp month (external)
     wsp = 1 # 1 m/s = (1/1000 km) / (1/(60*60) h) = 3.6 km/h
 )
+
+city_coords_lalo = {
+    'Bergen'    : [60.389, 5.33],
+    'Oslo'      : [59.913,10.739],
+    'Trondheim' : [63.43, 10.393],
+    'Tromsø'    : [69.683,18.943]
+}
+
+MONTH_NAMES3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']

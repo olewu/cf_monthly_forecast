@@ -1,9 +1,15 @@
+from multiprocessing.spawn import import_main_path
 import smtplib
 from cf_monthly_forecast.config import email_address, dirs
 import re
 import subprocess as sbp
 import os
 import cf_monthly_forecast.monthly_fc_input as mfin
+
+import numpy as np
+import xarray as xr
+from sklearn.neighbors import BallTree
+
 
 def send_email(SUBJECT,TEXT,TO=[email_address],FROM = email_address):
     """
@@ -100,6 +106,22 @@ def sysnum_from_grib(grib_file):
 
     return system_number
 
+def derive_path(model,mode='monthly',create=True):
+    
+    if mode == 'monthly':
+        temp_res = mfin.temp_res
+        product = mfin.PRODUCT
+    # elif mode == 'subdaily':
+    #     temp_res = sdfin.temp_res
+    #     product = sdfin.PRODUCT
+
+    lookup_path = os.path.join(dirs['cds_data'],temp_res,product,model)
+    # create the directory tree if it doesn't exist already:
+    if (not os.path.exists(lookup_path)) and create:
+        os.makedirs(lookup_path)
+    
+    return lookup_path
+
 def get_missing_hindcast_fields(model,system,month,mode='monthly'):
     """
     INPUT:
@@ -113,17 +135,7 @@ def get_missing_hindcast_fields(model,system,month,mode='monthly'):
             full path of where look-up was done
     """
 
-    if mode == 'monthly':
-        temp_res = mfin.temp_res
-        product = mfin.PRODUCT
-    # elif mode == 'subdaily':
-    #     temp_res = sdfin.temp_res
-    #     product = sdfin.PRODUCT
-
-    lookup_path = os.path.join(dirs['cds_data'],temp_res,product,model)
-    # create the directory tree if it doesn't exist already:
-    if not os.path.exists(lookup_path):
-        os.makedirs(lookup_path)
+    lookup_path = derive_path(model=model,mode=mode)
 
     missing_years   = []
     missing_vars    = []
@@ -156,7 +168,7 @@ def get_missing_hindcast_fields(model,system,month,mode='monthly'):
                 missing_vars.append(var)
                 missing_years.extend(missing_years_var)
 
-    return missing_vars, missing_years, lookup_path
+    return missing_vars, missing_years
 
 
 def reduce_vars(model,mode='monthly'):
@@ -174,3 +186,64 @@ def reduce_vars(model,mode='monthly'):
         variables_reduced = variables_df.long_name.to_list()
 
     return variables_reduced
+
+def find_closest_gp(loc_dict,mode='any'):
+    """
+    returns lon/lat values that exist in the forecast files
+    and that can be selected via xr.DataArray().sel()
+    """
+    
+    # use an sst field to derive which grid points are ocean/land
+    ds_sst = xr.open_dataset('/projects/NS9853K/DATA/SFE/Forecasts/forecast_production_sea_surface_temperature_2022_9.nc').sel(target_month=1).climatology_era
+
+    mode = 'land'
+    if mode == 'ocean':
+        valid_np = np.array(~np.isnan(ds_sst),dtype=int)
+    elif mode == 'land':
+        valid_np = np.array(np.isnan(ds_sst),dtype=int)
+    elif mode == 'any':
+        valid_np = np.array(np.ones_like(ds_sst))
+    else:
+        print('choose one of (`any`,`ocean`,`land`) for `mode`')
+        return None
+
+    valid = xr.DataArray(
+        valid_np,
+        dims = ds_sst.dims,
+        coords = ds_sst.coords
+    )
+
+    msk_stacked = valid.stack(index=['lat','lon'])
+    msk_stacked = msk_stacked.where(msk_stacked == 1,drop=True)
+    coords = np.deg2rad(np.stack([msk_stacked['lat'],msk_stacked['lon']],axis=-1))
+    tree   = BallTree(coords,metric='haversine')
+    # stack coordinates
+    loc_coords = np.deg2rad(
+        np.stack([ld for ldn,ld in loc_dict.items()])
+    )
+    k_indices = tree.query(loc_coords,return_distance=False).squeeze()
+    lalo_close = msk_stacked.isel(index=k_indices).index.values
+
+    return dict(zip(loc_dict.keys(), lalo_close))
+
+def quadrant_probs(x_data,y_data,x_mean=0,y_mean=0):
+    """
+    Q1 upper right moving clockwise
+    """
+
+    if isinstance(x_data,xr.core.dataarray.DataArray):
+        x_data = x_data.values
+    if isinstance(y_data,xr.core.dataarray.DataArray):
+        y_data = y_data.values
+    if isinstance(x_mean,xr.core.dataarray.DataArray):
+        x_mean = x_mean.values
+    if isinstance(y_mean,xr.core.dataarray.DataArray):
+        y_mean = y_mean.values
+
+    total_ens = np.size(x_data)
+    Q1_p = np.logical_and(x_data > x_mean, y_data > y_mean).sum()/total_ens * 100
+    Q2_p = np.logical_and(x_data > x_mean, y_data < y_mean).sum()/total_ens * 100
+    Q3_p = np.logical_and(x_data < x_mean, y_data < y_mean).sum()/total_ens * 100
+    Q4_p = np.logical_and(x_data < x_mean, y_data > y_mean).sum()/total_ens * 100
+    
+    return (Q1_p,Q2_p,Q3_p,Q4_p)
