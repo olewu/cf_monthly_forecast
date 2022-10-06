@@ -330,7 +330,7 @@ try:
                         )
                         if quarterly:
                             filename += '_q'
-                        fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
+                        # fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
                         plt.close(fig.fig)
 
                         #-------------PLOT SMOOTHED FIELDS-------------#
@@ -384,8 +384,8 @@ try:
                         )
                         print(filename_sm1)
                         if quarterly:
-                            filename += '_q'
-                        fig_s1.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm1),dpi=300)
+                            filename_sm1 += '_q'
+                        fig_s1.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename_sm1),dpi=300)
                         plt.close(fig_s1.fig)
 
                         # Plot the more strongly smoothed fields in addition:
@@ -436,10 +436,10 @@ try:
                             area,
                             lang
                         )
-                        print(filename_sm2)
+                        # print(filename_sm2)
                         if quarterly:
-                            filename += '_q'
-                        fig_s2.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm2),dpi=300)
+                            filename_sm2 += '_q'
+                        # fig_s2.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm2),dpi=300)
                         plt.close(fig_s2.fig)
 
 

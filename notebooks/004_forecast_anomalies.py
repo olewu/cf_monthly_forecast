@@ -100,7 +100,6 @@ figdir = '{0:s}/monthly_fc/init_{1:s}-{2:s}/anomalies/'.format(
 
 # send email in case the script fails for some reason (error message will be in log file)!
 try:
-
     # create a folder for the initialization if it doesn't already exist:
     if not os.path.exists(figdir):
         os.makedirs(figdir,exist_ok=False) # creates directories recursively!
@@ -282,9 +281,9 @@ try:
                         lang
                     )
                     
-                    print(filename)
+                    # print(filename)
 
-                    fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
+                    # fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
                     plt.close(fig.fig)
 
                     #------------------PLOT SMOOTHED FIELD------------------#
@@ -345,7 +344,7 @@ try:
                     
                     print(filename_sm1)
 
-                    fig_sm1.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm1),dpi=300)
+                    fig_sm1.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename_sm1),dpi=300)
                     plt.close(fig_sm1.fig)
                     
                     # 
@@ -403,9 +402,9 @@ try:
                         lang
                     )
                     
-                    print(filename_sm2)
+                    # print(filename_sm2)
 
-                    fig_sm2.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm2),dpi=300)
+                    # fig_sm2.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm2),dpi=300)
                     plt.close(fig_sm2.fig)
 
         
@@ -556,9 +555,9 @@ try:
                             lang
                         )
                         
-                        print(filename)
+                        # print(filename)
 
-                        fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
+                        # fig.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename),dpi=300)
                         plt.close(fig.fig)
 
                         #------------SMOOTHED FIELDS-----------#
@@ -620,7 +619,7 @@ try:
                         
                         print(filename_sm1)
 
-                        fig_sm1.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm1),dpi=300)
+                        fig_sm1.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename_sm1),dpi=300)
                         plt.close(fig_sm1.fig)
 
                         fig_sm2 = SubplotFigure(
@@ -679,9 +678,9 @@ try:
                             lang
                         )
                         
-                        print(filename_sm2)
+                        # print(filename_sm2)
 
-                        fig_sm2.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm2),dpi=300)
+                        # fig_sm2.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm2),dpi=300)
                         plt.close(fig_sm2.fig)
         
     # write an index file if the script executes as expected:
