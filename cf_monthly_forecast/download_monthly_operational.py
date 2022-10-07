@@ -7,7 +7,7 @@ from datetime import datetime
 import re
 import pandas as pd
 from cf_monthly_forecast.config import *
-from cf_monthly_forecast.utils import sysnum_from_grib, get_missing_hindcast_fields, reduce_vars
+from cf_monthly_forecast.utils import sysnum_from_grib, get_missing_hindcast_fields, reduce_vars, derive_path
 import cf_monthly_forecast.monthly_fc_input as mfin
 
 def main(init_date):
@@ -38,7 +38,7 @@ def main(init_date):
     # start a cdsapi client:
     c = cdsapi.Client()
 
-    for MODEL in all_models: 
+    for MODEL in all_models:
         # add current model to input dict:
         input_dict['originating_centre'] = MODEL
         input_dict['variable'] = reduce_vars(MODEL,mode='monthly')
@@ -52,7 +52,7 @@ def main(init_date):
         )
         outfile_fc = os.path.join(temp_dir,filename_fc)
 
-        #----------------1) RETRIEVE LATEST FORECAST----------------#
+        #----------------1.1) RETRIEVE LATEST FORECAST----------------#
         # note that the 'system' key is delibaretely left out of the request to obtain the latest system, 
         # whatever its system number is. It might have changed, but we don't have to specify it, so that doesn't matter here
 
@@ -81,8 +81,25 @@ def main(init_date):
         # keyword (here: system) in the second line and the gives the values for the keyword from there on. 
         # If the grib exists but returns no (0) messages, line 3 will be empty and the regex search will fail
 
+        #----------------1.2) SPLIT BY VARIABLE & CONVERT TO NETCDF----------------#
+        # split forecast:
+        if os.path.exists(outfile_fc):
+            print('splitting forecast grib file')
+            grib_split_fc = split_grib(outfile_fc,mode='forecast',product_type='monthly',delete_input=True)
+        
+        lookup_path = derive_path(MODEL,mode='monthly')
 
-        #----------------3) DOWNLOAD CORRESPONDING HINDCASTS 1993 - 2016 (IF NEEDED)----------------#
+        # do conversion of every single split file:
+        convert_grib_to_netcdf(
+            grib_split_fc,
+            lookup_path,
+            mode        = 'forecast',
+            split_keys  = ['[shortName]'],
+            prod_type   ='monthly',
+            system_num  = SYSTEM
+        )
+
+        #----------------2.1) DOWNLOAD CORRESPONDING HINDCASTS 1993 - 2016 (IF NEEDED)----------------#
         # now that we know the system number, we can get the corresponding hindcasts (here, the system number matters!)
         # check if they already exist, which is possible since the systems don't get updated so frequently:
         
@@ -94,22 +111,22 @@ def main(init_date):
         input_dict_hc['system'] = SYSTEM
         
         # the check has to derive the neccesity of downloading from the split nc files (single variables) in the new structure!
-        missing_vars, missing_years, lookup_path = get_missing_hindcast_fields(MODEL,SYSTEM,MONTH,mode='monthly')
+        missing_vars, missing_years = get_missing_hindcast_fields(MODEL,SYSTEM,MONTH,mode='monthly')
 
         # Do retrieval of the missing years + variables (if any)        
+        filename_hc = '{prd:s}_{mod:s}_{sys:s}_{hcs:0<4d}-{hce:0<4d}_{mon:s}.grib'.format(
+            mon = MONTH,
+            mod = MODEL,
+            prd = mfin.PRODUCT,
+            hcs = mfin.hc_range[0],
+            hce = mfin.hc_range[-1],
+            sys = SYSTEM
+        )
+        outfile_hc = os.path.join(temp_dir,filename_hc)
+        
         if missing_vars:
             input_dict_hc['variable'] = missing_vars
             input_dict_hc['year'] = [str(my).zfill(4) for my in set(missing_years)]
-
-            filename_hc = '{prd:s}_{mod:s}_{sys:s}_{hcs:0<4d}-{hce:0<4d}_{mon:s}.grib'.format(
-                mon = MONTH,
-                mod = MODEL,
-                prd = mfin.PRODUCT,
-                hcs = mfin.hc_range[0],
-                hce = mfin.hc_range[-1],
-                sys = SYSTEM
-            )
-            outfile_hc = os.path.join(temp_dir,filename_hc)
 
             # Download:
             if not os.path.exists(outfile_hc):
@@ -121,22 +138,7 @@ def main(init_date):
         else:
             print('All requested hindcasts for {0:s} 1993-2016 already exist.'.format(MONTH))
 
-        #----------------4) SPLIT BY VARIABLE & CONVERT TO NETCDF----------------#
-        # split forecast:
-        if os.path.exists(outfile_fc):
-            print('splitting forecast grib file')
-            grib_split_fc = split_grib(outfile_fc,mode='forecast',product_type='monthly',delete_input=True)
-        
-        # do conversion of every single split file:
-        convert_grib_to_netcdf(
-            grib_split_fc,
-            lookup_path,
-            mode        = 'forecast',
-            split_keys  = ['[shortName]'],
-            prod_type   ='monthly',
-            system_num  = SYSTEM
-        )
-        
+        #----------------2.2) SPLIT BY VARIABLE & CONVERT TO NETCDF----------------#
         # split hindcasts in the same manner (must include hindcast year in split),  this can take up to 2 mins:
         grib_split_hc,splt_date_key = split_grib(outfile_hc,mode='hindcast',product_type='monthly',delete_input=True)
         
