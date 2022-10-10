@@ -13,6 +13,7 @@ data_base           = '/projects/NS9853K/DATA/SFE'
 dirs = dict(
     SFE_forecast    = os.path.join(data_base,'Forecasts'),
     test_data       = os.path.join(proj_base,'data/raw/'),
+    station_norm    = os.path.join(proj_base,'data/external/'),
     public          = '/projects/NS9853K/www/',
     figures         = os.path.join(proj_base,'figures/'),
     inventory       = os.path.join(proj_base,'data/inventory/'),
@@ -60,4 +61,12 @@ city_coords_lalo = {
     'Tromsø'    : [69.683,18.943]
 }
 
+station_ids = {
+    'Bergen'    : 50540,
+    'Oslo'      : 18700,
+    'Trondheim' : 68125,
+    'Tromsø'    : 90450
+}
+
 MONTH_NAMES3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+MONTH_NAMES3_NO = ['Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Des']

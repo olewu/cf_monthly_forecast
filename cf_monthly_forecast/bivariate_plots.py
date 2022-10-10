@@ -7,11 +7,21 @@ from calendar import monthrange
 import sys
 
 from cf_monthly_forecast.config import *
-from cf_monthly_forecast.utils import quadrant_probs,find_closest_gp
+from cf_monthly_forecast.utils import quadrant_probs,find_closest_gp, get_station_norm_1991_2020
 from cf_monthly_forecast.plots import bivariate_fc_plot,derive_abs_limits
 from cf_monthly_forecast.utils import send_email
 
 def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=city_coords_lalo):
+    """
+    Note that ref_clim = 'obs'  takes ERA5 as climatology, choose ref_clim = 'stat' for actual observed station normals!
+    """
+
+    if ref_clim == 'stat':
+        # need to rescale the fc output in this case!
+        clim_mean_mode = 'stat'
+        ref_clim = 'nwp'
+    else:
+        clim_mean_mode = None
 
     x_ds = xr.open_dataset(dirs['SFE_forecast'] + '/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,x_var))
     y_ds = xr.open_dataset(dirs['SFE_forecast'] + '/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,y_var))
@@ -28,6 +38,7 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
         x_loc = x_ds.sel(lat=latlon[0],lon=latlon[1])
         y_loc = y_ds.sel(lat=latlon[0],lon=latlon[1])
 
+        # climatology (ERA5 & forecast system)
         x_clim_loc = ds_val['{0:s}_{1:s}'.format(x_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
         y_clim_loc = ds_val['{0:s}_{1:s}'.format(y_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
         
@@ -40,7 +51,6 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
 
             x_clim_loc_lea = x_clim_loc.sel(lead_month=LEA_M)
             y_clim_loc_lea = y_clim_loc.sel(lead_month=LEA_M)
-
 
             # derive quadrant probabilities for forecast ensemble:
             probs4 = quadrant_probs(
@@ -56,7 +66,6 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
                 y_clim_loc_lea
             )
             
-            plt_lims = derive_abs_limits(x_loc_lea,y_loc_lea)
 
             fc_date = init_date + relativedelta(months=LEA_M)
             TITLE = '{:s}, {:s} {:d}'.format(loc_name,fc_date.strftime('%B'),fc_date.year)
@@ -75,19 +84,42 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
             fc_mon_len = monthrange(fc_date.year,fc_date.month)
             if x_var == 'total_precipitation':
                 x_fac = 1000*fc_mon_len[1]
+            elif x_var == '2m_temperature':
+                x_fac = 1
             else:
                 x_fac = None
             if y_var == 'total_precipitation':
                 y_fac = 1000*fc_mon_len[1]
+            elif y_var == '2m_temperature':
+                y_fac = 1
             else:
                 y_fac = None
 
+            if clim_mean_mode is None:
+                clim_x_pass = x_loc_lea.climatology
+                clim_y_pass = y_loc_lea.climatology
+                fc_x_pass = x_loc_lea.forecast
+                fc_y_pass = y_loc_lea.forecast
+            else:
+                clim_x_pass = get_station_norm_1991_2020(x_var,loc_name,fc_date.month)
+                clim_y_pass = get_station_norm_1991_2020(y_var,loc_name,fc_date.month)
+
+                if x_var == 'total_precipitation':
+                    clim_x_pass /= y_fac
+                if y_var == 'total_precipitation':
+                    clim_y_pass /= y_fac
+                # standardize:
+                fc_x_pass = x_loc_lea.forecast - x_loc_lea.climatology + clim_x_pass
+                fc_y_pass = y_loc_lea.forecast - y_loc_lea.climatology + clim_y_pass
+
+            plt_lims = derive_abs_limits(x_loc_lea,y_loc_lea,x_center=clim_x_pass,y_center=clim_y_pass)
+
             # make scatter plot of the forecast data
             bivariate_fc_plot(
-                x_loc_lea.forecast,
-                y_loc_lea.forecast,
-                x_loc_lea.climatology,
-                y_loc_lea.climatology,
+                fc_x_pass,
+                fc_y_pass,
+                clim_x_pass,
+                clim_y_pass,
                 fc_probs = probs4,
                 clim_probs = clim_probs4,
                 plt_lims = plt_lims,
@@ -105,7 +137,7 @@ if __name__ == '__main__':
     x_var = '2m_temperature'
     y_var = 'total_precipitation'
 
-    # direct print output to log file:
+    # direct `print` output to log file:
     logfile_path = '{0:s}/logs/fc_bivariate_plt.log'.format(proj_base)
     sys.stdout = open(logfile_path, 'a')
 
@@ -128,7 +160,7 @@ if __name__ == '__main__':
             initmonth,
             inityear,
             'land',
-            'obs',
+            'stat',
             locations=city_coords_lalo
         )
 

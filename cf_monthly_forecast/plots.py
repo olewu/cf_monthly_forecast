@@ -6,12 +6,14 @@ import matplotlib.pyplot as plt
 
 from cf_monthly_forecast.config import *
 
-def derive_abs_limits(x_da,y_da):
+def derive_abs_limits(x_da,y_da,x_center=None,y_center=None):
     """
     """
     
-    x_center = x_da.climatology.values
-    y_center = y_da.climatology.values
+    if x_center is None:
+        x_center = x_da.climatology.values
+    if y_center is None:
+        y_center = y_da.climatology.values
 
     x_pm = 3.5*x_da.sd.values
     y_pm = 3.5*y_da.sd.values
@@ -89,6 +91,8 @@ def bivariate_fc_plot(
     ax.hlines(y_clim_mean,xlims[0],xlims[1],color='k',ls='dashed',lw=2)
     ax.vlines(x_em,ylims[0],ylims[1],color='C0',lw=2)
     ax.hlines(y_em,xlims[0],xlims[1],color='C0',lw=2)
+
+    print(x_clim_mean,x_em.values,y_clim_mean,y_em.values)
 
     # annotate:
     props = dict(boxstyle='round', facecolor='w', alpha=0.5,lw=2)

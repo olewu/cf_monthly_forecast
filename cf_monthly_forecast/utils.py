@@ -1,10 +1,12 @@
+import imp
 from multiprocessing.spawn import import_main_path
 import smtplib
-from cf_monthly_forecast.config import email_address, dirs
+from cf_monthly_forecast.config import *
 import re
 import subprocess as sbp
 import os
 import cf_monthly_forecast.monthly_fc_input as mfin
+import pandas as pd
 
 import numpy as np
 import xarray as xr
@@ -247,3 +249,21 @@ def quadrant_probs(x_data,y_data,x_mean=0,y_mean=0):
     Q4_p = np.logical_and(x_data < x_mean, y_data > y_mean).sum()/total_ens * 100
     
     return (Q1_p,Q2_p,Q3_p,Q4_p)
+
+def get_station_norm_1991_2020(variable,stat_name,month):
+    """
+    retrieve station normal 
+    """
+    # load csv:
+    norm = pd.read_csv(
+        os.path.join(dirs['station_norm'],'{0:s}_normals_station_norway_1991-2020.csv'.format(variable)),
+        sep = ';',
+        decimal = ',',
+        index_col=0
+    )
+    # get station ID as defined in config
+    stid = station_ids[stat_name]
+    # get norwegian 3 letter month name:
+    mon = MONTH_NAMES3_NO[month-1].lower()
+    
+    return norm[mon].loc[norm.index == stid].values[0]
