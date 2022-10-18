@@ -14,10 +14,12 @@ dirs = dict(
     SFE_forecast    = os.path.join(data_base,'Forecasts'),
     test_data       = os.path.join(proj_base,'data/raw/'),
     station_norm    = os.path.join(proj_base,'data/external/'),
+    processed       = os.path.join(proj_base,'data/processed/'),
     public          = '/projects/NS9853K/www/',
     figures         = os.path.join(proj_base,'figures/'),
     inventory       = os.path.join(proj_base,'data/inventory/'),
-    cds_data        = os.path.join(data_base,'cds_seasonal_forecast')
+    cds_data        = os.path.join(data_base,'cds_seasonal_forecast'),
+    senorge         = '/projects/NS9853K/DATA/senorge/'
 )
 
 model_init_mode = {
@@ -26,7 +28,7 @@ model_init_mode = {
 }
 
 # all available models:
-all_models = ['ukmo','ecmwf','meteo_france','dwd','cmcc','ncep','eccc','jma']
+all_models = ['ecmwf','meteo_france','dwd','cmcc','ukmo','ncep','eccc','jma']
 # Note that the the last three models in this last are last on purpose. They aren't part of the MME as of now, so downloading them has lower priority!
 
 # map short names to long names:
@@ -69,4 +71,6 @@ station_ids = {
 }
 
 MONTH_NAMES3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+MONTH_NAMESF = ['January','February','March','April','May','June','July','August','September','October','November','December']
 MONTH_NAMES3_NO = ['Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Des']
+MONTH_NAMESF_NO = ['Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember']

@@ -1,5 +1,3 @@
-import imp
-from multiprocessing.spawn import import_main_path
 import smtplib
 from cf_monthly_forecast.config import *
 import re
@@ -7,6 +5,7 @@ import subprocess as sbp
 import os
 import cf_monthly_forecast.monthly_fc_input as mfin
 import pandas as pd
+from datetime import datetime
 
 import numpy as np
 import xarray as xr
@@ -267,3 +266,70 @@ def get_station_norm_1991_2020(variable,stat_name,month):
     mon = MONTH_NAMES3_NO[month-1].lower()
     
     return norm[mon].loc[norm.index == stid].values[0]
+
+
+def get_station_data(station_id):
+
+    stat_normals = pd.read_csv(
+        '/projects/NS9001K/owul/projects/cf_monthly_forecast/data/external/monthly_station_normals.csv',
+        sep = ';',
+        decimal = ','
+    )
+
+    station = 'SN' + str(station_id)
+    timeix = [datetime.strptime(tt,'%m.%Y') for tt in stat_normals[stat_normals['Stasjon'] == station]['Tid(norsk normaltid)']]
+    tp = np.array([np.nan if tt == '-' else np.float64(tt) for tt in stat_normals[stat_normals['Stasjon'] == station]['Nedbør (mnd)'].replace(',','.', regex=True)])
+    t2 = np.array([np.nan if tt == '-' else np.float64(tt) for tt in stat_normals[stat_normals['Stasjon'] == station]['Middeltemperatur (mnd)'].replace(',','.', regex=True)])
+
+    return xr.Dataset(
+        data_vars = {
+            '2m_temperature' : ('time',t2),
+            'total_precipitation' : ('time',tp)
+        },
+        coords = {'time':timeix}
+    )
+
+    
+def get_station_stats(station_id,start=1993,end=2016):
+    
+    xr_set = get_station_data(station_id)
+    xr_subs = xr_set.sel(time=slice(str(start),str(end)))
+
+    xr_subs_gr = xr_subs.groupby(xr_subs.time.dt.month)
+
+    return xr_subs_gr.mean('time'), xr_subs_gr.std('time')
+
+def predict_from_monthly_trend(station_id,pred_years,start=1991,end=2020):
+    
+    xr_set = get_station_data(station_id)
+    xr_subs = xr_set.sel(time=slice(str(start),str(end)))
+
+    xr_subs_gr = xr_subs.groupby(xr_subs.time.dt.month)
+
+    trnd_prd_temp = []
+    trnd_prd_prec = []
+    index = []
+
+    for mon,xrs in xr_subs_gr:
+        pf_t2 = np.polyfit(np.arange(start,end+1),xrs['2m_temperature'],deg=1)
+        trnd_prd_temp.append(np.polyval(pf_t2,np.array(pred_years)))
+
+        pf_tp = np.polyfit(np.arange(start,end+1),xrs['total_precipitation'],deg=1)
+        trnd_prd_prec.append(np.polyval(pf_tp,np.array(pred_years)))
+
+        index.append(mon)
+
+    # return trnd_prd_prec, trnd_prd_temp, index
+
+    xr_trend_pred = xr.Dataset(
+        data_vars = {
+            '2m_temperature' : (('month','year'),np.array(trnd_prd_temp)),
+            'total_precipitation' : (('month','year'),np.array(trnd_prd_temp))
+        },
+        coords = {
+          'month' : ('month',index),
+          'year' : ('year',pred_years)
+        }
+    )
+
+    return xr_trend_pred
