@@ -6,6 +6,7 @@ import os
 import cf_monthly_forecast.monthly_fc_input as mfin
 import pandas as pd
 from datetime import datetime
+from glob import glob
 
 import numpy as np
 import xarray as xr
@@ -106,6 +107,21 @@ def sysnum_from_grib(grib_file):
     system_number = re.search('\d+',out_str.split('\n')[2]).group()
 
     return system_number
+
+def latest_sys_from_existing(model,year,month,mode='monthly'):
+    lookup_path = derive_path(model,mode=mode)
+    
+    all_files = glob(lookup_path + '/*/*{:}_{:}*.nc'.format(year,month))
+    
+    # extractnsystem number:
+    sysn = [re.search('{:s}_\d+_'.format(model),fi)[0].replace('_','').replace(model,'') for fi in all_files]
+
+    sys_num = list(set(sysn))
+
+    if len(sys_num) > 1:
+        print('Found multiple matching systems ({:})! Will only return the first.'.format(sys_num))
+
+    return sys_num[0], lookup_path
 
 def derive_path(model,mode='monthly',create=True):
     
@@ -324,7 +340,7 @@ def predict_from_monthly_trend(station_id,pred_years,start=1991,end=2020):
     xr_trend_pred = xr.Dataset(
         data_vars = {
             '2m_temperature' : (('month','year'),np.array(trnd_prd_temp)),
-            'total_precipitation' : (('month','year'),np.array(trnd_prd_temp))
+            'total_precipitation' : (('month','year'),np.array(trnd_prd_prec))
         },
         coords = {
           'month' : ('month',index),
