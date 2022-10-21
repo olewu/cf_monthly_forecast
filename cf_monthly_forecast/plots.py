@@ -1,12 +1,14 @@
 # move plotting functions from 002_forecast_plots.py and 004_forecast_anomalies.py here to make those more readable
 
+from pyparsing import col
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from cf_monthly_forecast.config import *
 
-def derive_abs_limits(x_da,y_da,x_center=None,y_center=None):
+def derive_abs_limits(x_da,y_da,x_center=None,y_center=None,x_sd=None,y_sd=None):
     """
     """
     
@@ -15,10 +17,12 @@ def derive_abs_limits(x_da,y_da,x_center=None,y_center=None):
     if y_center is None:
         y_center = y_da.climatology.values
 
-    x_pm = 3.5*x_da.sd.values
-    y_pm = 3.5*y_da.sd.values
+    if x_sd is None:
+        x_sd = x_da.sd.values
+    if y_sd is None:
+        y_sd = y_da.sd.values
 
-    return [x_center-x_pm,x_center+x_pm,y_center-y_pm,y_center+y_pm]
+    return [x_center-3.5*x_sd,x_center+3.5*x_sd,y_center-3.5*y_sd,y_center+3.5*y_sd]
 
 def bivariate_fc_plot(
         x_ensemble,
@@ -26,12 +30,16 @@ def bivariate_fc_plot(
         x_clim_mean,
         y_clim_mean,
         fc_probs,
+        clim_x = None,
+        clim_y = None,
         clim_probs = None,
         plt_lims = None,
         save_path = None,
         fig_name = None,
         x_var_name = 'X',
         y_var_name = 'Y',
+        x_pred = None,
+        y_pred = None,
         x_units = None, # if None, will be derived from config
         y_units = None, # if None, will be derived from config
         x_fac = None, # if None, will be derived from config, set to 1 to force no scaling
@@ -76,7 +84,7 @@ def bivariate_fc_plot(
         plt_lims[2] = -.0001
         y_ensemble[y_ensemble < 0] = 0
     
-    ax.scatter(x_ensemble,y_ensemble,marker='o',color='none',edgecolor='C0',clip_on=True)
+    ax.scatter(x_ensemble,y_ensemble,c='C0',marker='o',s=25,clip_on=True) #,color='none',edgecolor='C0'
 
     if plt_lims is None:
         xlims = ax.get_xlim(); ylims = ax.get_ylim()
@@ -87,12 +95,34 @@ def bivariate_fc_plot(
         ax.set_xlim(xlims)
         ax.set_ylim(ylims)
 
-    ax.vlines(x_clim_mean,ylims[0],ylims[1],color='k',ls='dashed',lw=2)
+    ax.vlines(x_clim_mean,ylims[0],ylims[1],color='k',ls='dashed',lw=2,label='obs')
     ax.hlines(y_clim_mean,xlims[0],xlims[1],color='k',ls='dashed',lw=2)
-    ax.vlines(x_em,ylims[0],ylims[1],color='C0',lw=2)
+    ax.vlines(x_em,ylims[0],ylims[1],color='C0',lw=2,label='forecast')
     ax.hlines(y_em,xlims[0],xlims[1],color='C0',lw=2)
 
+    if x_pred is not None:
+        ax.vlines(x_pred,ylims[0],ylims[1],color='C1',alpha=.5,ls='dashed',lw=2,label='trend')
+    if y_pred is not None:
+        ax.hlines(y_pred,xlims[0],xlims[1],color='C1',alpha=.5,ls='dashed',lw=2)
+    
+    if clim_x is not None and clim_y is not None:
+        #create scatterplot
+        ax.scatter(clim_x.values,clim_y.values,c='none',marker='.',zorder=10)
+
+        #use for loop to add annotations to each point in plot 
+        for i, clim_t in enumerate(clim_x.time):
+            txt = str(clim_t.dt.year.item())[2:]
+            ax.annotate(txt, (clim_x[i], clim_y[i]),fontsize=9,color='k',zorder=10,ha='center',va='center')
+        
     print(x_clim_mean,x_em.values,y_clim_mean,y_em.values)
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                    box.width, box.height * 0.9])
+
+    # Put a legend below current axis
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.11),
+            fancybox=True, shadow=True, ncol=3,fontsize=14)
 
     # annotate:
     props = dict(boxstyle='round', facecolor='w', alpha=0.5,lw=2)
@@ -102,20 +132,20 @@ def bivariate_fc_plot(
     e[max_prob_arg] = 'r'
 
     if clim_probs is None:
-        ax.text(.975,.975,'wet & warm:\n{0:2.1f}%'.format(fc_probs[0]),va='top',ha='right',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[0]))
-        ax.text(.975,.025,'dry & warm:\n{0:2.1f}%'.format(fc_probs[1]),va='bottom',ha='right',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[1]))
-        ax.text(0.025,.025,'dry & cold:\n{0:2.1f}%'.format(fc_probs[2]),va='bottom',ha='left',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[2]))
-        ax.text(0.025,.975,'wet & cold:\n{0:2.1f}%'.format(fc_probs[3]),va='top',ha='left',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[3]))
+        ax.text(.975,.975,'wet & warm:\n{0:2.1f}%'.format(fc_probs[0]),va='top',ha='right',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[0]),zorder=11)
+        ax.text(.975,.025,'dry & warm:\n{0:2.1f}%'.format(fc_probs[1]),va='bottom',ha='right',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[1]),zorder=11)
+        ax.text(0.025,.025,'dry & cold:\n{0:2.1f}%'.format(fc_probs[2]),va='bottom',ha='left',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[2]),zorder=11)
+        ax.text(0.025,.975,'wet & cold:\n{0:2.1f}%'.format(fc_probs[3]),va='top',ha='left',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[3]),zorder=11)
     else:
-        ax.text(.975,.975,'wet & warm:\n{0:2.1f}% ({1:2.1f}%)'.format(fc_probs[0],clim_probs[0]),va='top',ha='right',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[0]))
-        ax.text(.975,.025,'dry & warm:\n{0:2.1f}% ({1:2.1f}%)'.format(fc_probs[1],clim_probs[1]),va='bottom',ha='right',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[1]))
-        ax.text(0.025,.025,'dry & cold:\n{0:2.1f}% ({1:2.1f}%)'.format(fc_probs[2],clim_probs[2]),va='bottom',ha='left',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[2]))
-        ax.text(0.025,.975,'wet & cold:\n{0:2.1f}% ({1:2.1f}%)'.format(fc_probs[3],clim_probs[3]),va='top',ha='left',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[3]))
+        ax.text(.975,.975,'wet & warm:\n{0:2.1f}% ({1:2.1f}%)'.format(fc_probs[0],clim_probs[0]),va='top',ha='right',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[0]),zorder=11)
+        ax.text(.975,.025,'dry & warm:\n{0:2.1f}% ({1:2.1f}%)'.format(fc_probs[1],clim_probs[1]),va='bottom',ha='right',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[1]),zorder=11)
+        ax.text(0.025,.025,'dry & cold:\n{0:2.1f}% ({1:2.1f}%)'.format(fc_probs[2],clim_probs[2]),va='bottom',ha='left',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[2]),zorder=11)
+        ax.text(0.025,.975,'wet & cold:\n{0:2.1f}% ({1:2.1f}%)'.format(fc_probs[3],clim_probs[3]),va='top',ha='left',fontsize=15,transform=ax.transAxes, bbox = dict(props.items(),edgecolor=e[3]),zorder=11)
 
     # axis labels and title:
     ax.set_xlabel('{0:s} [{1:s}]'.format(x_var_name.replace('_',' '),x_units),fontsize=18)
     ax.set_ylabel('{0:s} [{1:s}]'.format(y_var_name.replace('_',' '),y_units),fontsize=18)
-    ax.set_title(title,fontsize=24,y=1.025)
+    ax.set_title(title,fontsize=24,y=1.1)
 
     ax.tick_params(axis='x', labelsize=15)
     ax.tick_params(axis='y', labelsize=15)

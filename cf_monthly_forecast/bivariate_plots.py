@@ -7,7 +7,7 @@ from calendar import monthrange
 import sys
 
 from cf_monthly_forecast.config import *
-from cf_monthly_forecast.utils import quadrant_probs,find_closest_gp, get_station_norm_1991_2020
+from cf_monthly_forecast.utils import quadrant_probs,find_closest_gp, get_station_stats, predict_from_monthly_trend, get_station_data
 from cf_monthly_forecast.plots import bivariate_fc_plot,derive_abs_limits
 from cf_monthly_forecast.utils import send_email
 
@@ -18,11 +18,14 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
 
     if ref_clim == 'stat':
         # need to rescale the fc output in this case!
+        if not (x_var in ['2m_temperature','total_precipitation'] and y_var in ['2m_temperature','total_precipitation']):
+            print('can only get station normals for temperature and precip currently')
+            sys.exit()
         clim_mean_mode = 'stat'
-        ref_clim = 'nwp'
+        # drop Trondheim from the list due to the current lack of sufficient data
+        locations.pop('Trondheim')
     else:
         clim_mean_mode = None
-
     x_ds = xr.open_dataset(dirs['SFE_forecast'] + '/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,x_var))
     y_ds = xr.open_dataset(dirs['SFE_forecast'] + '/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,y_var))
     
@@ -33,18 +36,32 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
     # find closest grid points to the required ones:
     closest_gp_dict = find_closest_gp(locations,mode=MODE)
 
+    
     for (loc_name,latlon) in closest_gp_dict.items():
         # find closest grid point:
         x_loc = x_ds.sel(lat=latlon[0],lon=latlon[1])
         y_loc = y_ds.sel(lat=latlon[0],lon=latlon[1])
 
-        # climatology (ERA5 & forecast system)
-        x_clim_loc = ds_val['{0:s}_{1:s}'.format(x_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
-        y_clim_loc = ds_val['{0:s}_{1:s}'.format(y_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+        if ref_clim != 'stat':
+            # climatology (ERA5 & forecast system)
+            x_clim_loc = ds_val['{0:s}_{1:s}'.format(x_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+            y_clim_loc = ds_val['{0:s}_{1:s}'.format(y_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+        else:
+            x_clim_loc = ds_val['{0:s}_nwp'.format(x_var)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+            y_clim_loc = ds_val['{0:s}_nwp'.format(y_var)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
         
+            # get stations stats and trend prediction ahead of looping:
+            stat_id = station_ids[loc_name]
+            stat_data = get_station_data(stat_id)
+            mean_stat,std_stat = get_station_stats(stat_id)
+            stat_trend = predict_from_monthly_trend(stat_id,pred_years=[INIT_YEA,INIT_YEA+1])
+
         for LEA_M in [1,2,3]: # LEA_M is the coordinate value for lead_month, not the index! climatology only exists for first 3 lead months!
             print(LEA_M,loc_name,latlon)
-
+            
+            # derive forecast date:
+            fc_date = init_date + relativedelta(months=LEA_M)
+            
             # extract relevant lead month:
             x_loc_lea = x_loc.sel(lead_month=LEA_M)
             y_loc_lea = y_loc.sel(lead_month=LEA_M)
@@ -60,14 +77,22 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
                 y_loc_lea.climatology
             )
 
+
             # climatological quadrant probabilities 
             clim_probs4 = quadrant_probs(
                 x_clim_loc_lea,
                 y_clim_loc_lea
             )
-            
 
-            fc_date = init_date + relativedelta(months=LEA_M)
+            if ref_clim == 'stat':
+                FC_MON = fc_date.month
+                clim_probs4_stat = quadrant_probs(
+                    stat_data.where(stat_data.time.dt.month==FC_MON).dropna('time')[x_var],
+                    stat_data.where(stat_data.time.dt.month==FC_MON).dropna('time')[y_var],
+                    mean_stat.sel(month=FC_MON)[x_var],
+                    mean_stat.sel(month=FC_MON)[y_var],
+                )
+
             TITLE = '{:s}, {:s} {:d}'.format(loc_name,fc_date.strftime('%B'),fc_date.year)
             savepath = '{0:s}/monthly_fc/init_{1:s}-{2:s}/bivariate_loc/'.format(
                 dirs['public'],str(INIT_YEA).zfill(4),str(INIT_MON).zfill(2)
@@ -100,19 +125,32 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
                 clim_y_pass = y_loc_lea.climatology
                 fc_x_pass = x_loc_lea.forecast
                 fc_y_pass = y_loc_lea.forecast
+
+                plt_lims = derive_abs_limits(fc_x_pass,fc_y_pass,x_center=clim_x_pass,y_center=clim_y_pass,x_sd=x_loc_lea.sd,y_sd=y_loc_lea.sd)
+
+                clim_sel_x, clim_sel_y = None, None
+                x_pred_trend, y_pred_trend = None, None
+
             else:
-                clim_x_pass = get_station_norm_1991_2020(x_var,loc_name,fc_date.month)
-                clim_y_pass = get_station_norm_1991_2020(y_var,loc_name,fc_date.month)
+                clim_x_pass = mean_stat.sel(month=FC_MON)[x_var]
+                clim_y_pass = mean_stat.sel(month=FC_MON)[y_var]
 
-                if x_var == 'total_precipitation':
-                    clim_x_pass /= y_fac
-                if y_var == 'total_precipitation':
-                    clim_y_pass /= y_fac
+                x_sd = std_stat.sel(month=FC_MON)[x_var]
+                y_sd = std_stat.sel(month=FC_MON)[y_var]
+
+                y_fac = 1
+                x_fac = 1
                 # standardize:
-                fc_x_pass = x_loc_lea.forecast - x_loc_lea.climatology + clim_x_pass
-                fc_y_pass = y_loc_lea.forecast - y_loc_lea.climatology + clim_y_pass
+                fc_x_pass = ((x_loc_lea.forecast - x_loc_lea.climatology)/x_loc_lea.sd)*x_sd + clim_x_pass
+                fc_y_pass = ((y_loc_lea.forecast - y_loc_lea.climatology)/y_loc_lea.sd)*y_sd + clim_y_pass
 
-            plt_lims = derive_abs_limits(x_loc_lea,y_loc_lea,x_center=clim_x_pass,y_center=clim_y_pass)
+                x_pred_trend = stat_trend.sel(month=FC_MON,year=fc_date.year)[x_var]
+                y_pred_trend = stat_trend.sel(month=FC_MON,year=fc_date.year)[y_var]
+
+                clim_sel = stat_data.where(stat_data.time.dt.month==FC_MON).dropna('time')
+                clim_sel_x, clim_sel_y = clim_sel[x_var], clim_sel[y_var]
+
+                plt_lims = derive_abs_limits(fc_x_pass,fc_y_pass,x_center=clim_x_pass,y_center=clim_y_pass,x_sd=x_sd,y_sd=y_sd)
 
             # make scatter plot of the forecast data
             bivariate_fc_plot(
@@ -120,6 +158,8 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
                 fc_y_pass,
                 clim_x_pass,
                 clim_y_pass,
+                clim_x = clim_sel_x,
+                clim_y = clim_sel_y,
                 fc_probs = probs4,
                 clim_probs = clim_probs4,
                 plt_lims = plt_lims,
@@ -127,6 +167,8 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
                 y_var_name = y_var,
                 x_fac = x_fac,
                 y_fac = y_fac,
+                x_pred = x_pred_trend,
+                y_pred = y_pred_trend,
                 title = TITLE,
                 save_path = savepath,
                 fig_name = figname
