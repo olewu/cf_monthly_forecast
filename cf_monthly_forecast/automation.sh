@@ -34,8 +34,9 @@ conda activate cf_monthly_forecast
 ipython /projects/NS9001K/owul/projects/cf_monthly_forecast/cf_monthly_forecast/bivariate_plots.py
 fi
 
+FC_FILENAME='forecast_'$(date +%Y)_$(date +%m)'.nc4'
 # copy the forecast summary file to the public folder if it isn't there yet:
-if [ ! -e /projects/NS9853K/www/CF_seasonal_fc/$FC_FILENAME ]
+if [ ! -e /projects/NS9853K/www/CF_seasonal_fc/$FC_FILENAME -a -e /projects/NS9853K/DATA/SFE/Forecasts/$FC_FILENAME ]
 then
 cp /projects/NS9853K/DATA/SFE/Forecasts/$FC_FILENAME /projects/NS9853K/www/CF_seasonal_fc/
 # give reading rights to all users
