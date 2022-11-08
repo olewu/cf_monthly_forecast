@@ -4,6 +4,7 @@ import re
 import subprocess as sbp
 import os
 import cf_monthly_forecast.monthly_fc_input as mfin
+import cf_monthly_forecast.subdaily_fc_input as sdfin
 import pandas as pd
 from datetime import datetime
 from glob import glob
@@ -98,7 +99,7 @@ def sysnum_from_grib(grib_file):
     OUTPUT: value of system keyword in the grib file (str)
     """
 
-    p = sbp.Popen(['grib_ls', '-p','system',grib_file], stdout=sbp.PIPE, stderr=sbp.PIPE)
+    p = sbp.Popen(['grib_ls', '-p','system',grib_file,' | head'], stdout=sbp.PIPE, stderr=sbp.PIPE)
     # retrieve output and error ('' if no error)
     out, err = p.communicate()
     # decode output from bytes to string:
@@ -128,9 +129,9 @@ def derive_path(model,mode='monthly',create=True):
     if mode == 'monthly':
         temp_res = mfin.temp_res
         product = mfin.PRODUCT
-    # elif mode == 'subdaily':
-    #     temp_res = sdfin.temp_res
-    #     product = sdfin.PRODUCT
+    elif mode == 'subdaily':
+        temp_res = sdfin.temp_res
+        product = sdfin.PRODUCT
 
     lookup_path = os.path.join(dirs['cds_data'],temp_res,product,model)
     # create the directory tree if it doesn't exist already:
@@ -139,7 +140,7 @@ def derive_path(model,mode='monthly',create=True):
     
     return lookup_path
 
-def get_missing_hindcast_fields(model,system,month,mode='monthly'):
+def get_missing_hindcast_fields(model,system,month,day='01',mode='monthly'):
     """
     INPUT:
             model       : modeling centre (str)
@@ -154,6 +155,11 @@ def get_missing_hindcast_fields(model,system,month,mode='monthly'):
 
     lookup_path = derive_path(model=model,mode=mode)
 
+    if mode == 'monthly':
+        y_range = mfin.hc_range
+    elif mode == 'subdaily':
+        y_range = sdfin.hc_range
+
     missing_years   = []
     missing_vars    = []
 
@@ -166,16 +172,25 @@ def get_missing_hindcast_fields(model,system,month,mode='monthly'):
             missing_vars.append(var)
         else:
             # filename for variable:
-            hc_file = '{var:s}_{mod:s}_{sys:s}_?_{mon:s}.nc'.format(
-                var     = var,
-                mod     = model,
-                mon     = month,
-                sys     = system
-            )
+            if mode == 'monthly':
+                hc_file = '{var:s}_{mod:s}_{sys:s}_?_{mon:s}.nc'.format(
+                    var     = var,
+                    mod     = model,
+                    mon     = month,
+                    sys     = system
+                )
+            elif mode == 'subdaily':
+                hc_file = '{var:s}_{mod:s}_{sys:s}_?_{mon:s}_{day:s}.nc'.format(
+                    var     = var,
+                    mod     = model,
+                    mon     = month,
+                    day     = day,
+                    sys     = system
+                )
             
             # collect missing years:
             missing_years_var = []
-            for yy in mfin.hc_range:
+            for yy in y_range:
                 year_file = hc_file.replace('_?_','_{:0<4d}_'.format(yy))
                 year_file_path = os.path.join(var_path,year_file)
                 if not os.path.exists(year_file_path):
@@ -194,8 +209,8 @@ def reduce_vars(model,mode='monthly'):
 
     if mode == 'monthly':
         variables_df = mfin.variables_df
-    # elif mode == 'subdaily':
-    #     variables_df = sdfin.variables_df
+    elif mode == 'subdaily':
+        variables_df = sdfin.variables_df
 
     if model in ['ncep','jma']: # NCEP and JMA don't provide snowfall, so take these out the file list for request to succeed
         variables_reduced = [vv for vv in variables_df.long_name if vv not in ['snowfall']]
