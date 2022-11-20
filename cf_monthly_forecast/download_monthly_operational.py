@@ -54,7 +54,7 @@ def main(init_date):
 
         # add current model to input dict:
         input_dict['originating_centre'] = MODEL
-        input_dict['variable'] = reduce_vars(MODEL,mode=mfin.PRODUCT)
+        input_dict['variable'] = reduce_vars(MODEL,mode=mfin.temp_res)
         
         # name + location of output file:
         filename_fc = '{prd:s}_{mod:s}_latest_{ye:s}_{mon:s}.grib'.format(
@@ -106,9 +106,9 @@ def main(init_date):
             # split forecast:
             if os.path.exists(outfile_fc):
                 print('splitting forecast grib file')
-                grib_split_fc = split_grib(outfile_fc,mode='forecast',product_type=mfin.PRODUCT,delete_input=True)
+                grib_split_fc = split_grib(outfile_fc,mode='forecast',product_type=mfin.temp_res,delete_input=True)
             
-            lookup_path = derive_path(MODEL,mode=mfin.PRODUCT)
+            lookup_path = derive_path(MODEL,mode=mfin.temp_res)
 
             # do conversion of every single split file:
             convert_grib_to_netcdf(
@@ -116,7 +116,7 @@ def main(init_date):
                 lookup_path,
                 mode        = 'forecast',
                 split_keys  = ['[shortName]'],
-                prod_type   =mfin.PRODUCT,
+                prod_type   = mfin.temp_res,
                 system_num  = SYSTEM
             )
 
@@ -139,7 +139,7 @@ def main(init_date):
             input_dict_hc['system'] = SYSTEM
             
             # the check has to derive the neccesity of downloading from the split nc files (single variables) in the new structure!
-            missing_vars, missing_years = get_missing_hindcast_fields(MODEL,SYSTEM,MONTH,mode=mfin.PRODUCT)
+            missing_vars, missing_years = get_missing_hindcast_fields(MODEL,SYSTEM,MONTH,mode=mfin.temp_res)
 
             # Do retrieval of the missing years + variables (if any)        
             filename_hc = '{prd:s}_{mod:s}_{sys:s}_{hcs:0<4d}-{hce:0<4d}_{mon:s}.grib'.format(
@@ -180,7 +180,7 @@ def main(init_date):
                 )
             
                 # if the loop ran to this point, create a file indicating that the forecast for the specified init date and model exists:
-                sbp.run(['touch',idx_file_hc])
+            sbp.run(['touch',idx_file_hc])
 
         else:
             print('All requested hindcasts for {0:s} 1993-2016 already exist.'.format(MONTH))

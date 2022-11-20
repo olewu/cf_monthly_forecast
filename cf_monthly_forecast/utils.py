@@ -208,25 +208,34 @@ def reduce_vars(model,mode='monthly'):
     """
 
     if mode == 'monthly':
-        variables_df = mfin.variables_df
+        variables_df = mfin.long_names
     elif mode == 'subdaily':
-        variables_df = sdfin.variables_df
+        variables_df = sdfin.long_names
 
     if model in ['ncep','jma']: # NCEP and JMA don't provide snowfall, so take these out the file list for request to succeed
-        variables_reduced = [vv for vv in variables_df.long_name if vv not in ['snowfall']]
+        variables_reduced = [vv for vv in variables_df.values() if vv not in ['snowfall']]
     else:
-        variables_reduced = variables_df.long_name.to_list()
+        variables_reduced = [vv for vv in variables_df.values()]
 
     return variables_reduced
 
-def find_closest_gp(loc_dict,mode='any'):
+# move these out into a new file:
+
+def find_closest_gp(loc_dict,mode='any',vers='new'):
     """
     returns lon/lat values that exist in the forecast files
     and that can be selected via xr.DataArray().sel()
     """
     
     # use an sst field to derive which grid points are ocean/land
-    ds_sst = xr.open_dataset('/projects/NS9853K/DATA/SFE/Forecasts/forecast_production_sea_surface_temperature_2022_9.nc').sel(target_month=1).climatology_era
+    if vers == 'old':
+        ds_sst = xr.open_dataset(
+            os.path.join(dirs['SFE_summary'],'forecast_production_sea_surface_temperature_2022_9.nc')
+        ).sel(target_month=1).climatology_era
+    else:
+        ds_sst = xr.open_dataset(
+            os.path.join(dirs['SFE_monthly'],'sea_surface_temperature/forecast_production_sea_surface_temperature_2022_11.nc')
+        ).sel(target_month=1).climatology_era
 
     mode = 'land'
     if mode == 'ocean':

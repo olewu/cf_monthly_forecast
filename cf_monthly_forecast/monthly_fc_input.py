@@ -1,6 +1,6 @@
 # Input to operational request to retrieve latest monthly aggregated seasonal forecasts via /notebooks/015_operational_download_sequence.py
 
-import pandas as pd
+# import pandas as pd
 
 # temporal aggregation and corresponding product keyword for cds request:
 temp_res = 'monthly'
@@ -32,7 +32,10 @@ var_names = {
     ]
 }
 
-variables_df = pd.DataFrame(var_names,columns=['long_name','short_name'])
+long_names = {sn:ln for sn,ln in zip(var_names['short_name'],var_names['long_name'])}
+short_names = {ln:sn for sn,ln in zip(var_names['short_name'],var_names['long_name'])}
+
+# variables_df = pd.DataFrame(var_names,columns=['long_name','short_name'])
 
 # Input to request that should remain constant for all forecast retrievals:
 FORMAT          = 'grib'

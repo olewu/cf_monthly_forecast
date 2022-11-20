@@ -44,7 +44,8 @@ def bivariate_fc_plot(
         y_units = None, # if None, will be derived from config
         x_fac = None, # if None, will be derived from config, set to 1 to force no scaling
         y_fac = None, # if None, will be derived from config, set to 1 to force no scaling
-        title = ''
+        title = '',
+        print_n = True
     ):
     """
     plt_lims [x_low,x_upp,y_low,y_upp]
@@ -77,43 +78,47 @@ def bivariate_fc_plot(
 
     f,ax = plt.subplots(figsize=(7,7))
     
-    if 'precipitation' in x_var_name:
+    if 'precipitation' in x_var_name and plt_lims is not None:
         plt_lims[0] = -.0001
         x_ensemble[x_ensemble < 0] = 0
-    if 'precipitation' in y_var_name:
+    if 'precipitation' in y_var_name and plt_lims is not None:
         plt_lims[2] = -.0001
         y_ensemble[y_ensemble < 0] = 0
     
     ax.scatter(x_ensemble,y_ensemble,c='C0',marker='o',s=25,clip_on=True) #,color='none',edgecolor='C0'
+    
+    if clim_x is not None and clim_y is not None:
+        #create scatterplot
+        # ax.scatter(clim_x.values,clim_y.values,c='none',marker='.',zorder=10)
+        ax.scatter(clim_x.values,clim_y.values,c='none',edgecolor='k',marker='o',zorder=10)
 
+        #use for loop to add annotations to each point in plot 
+        # for i, clim_t in enumerate(clim_x.time):
+        #     txt = str(clim_t.dt.year.item())[2:]
+        #     ax.annotate(txt, (clim_x[i], clim_y[i]),fontsize=9,color='k',zorder=10,ha='center',va='center')
+        
     if plt_lims is None:
         xlims = ax.get_xlim(); ylims = ax.get_ylim()
+        if 'precipitation' in x_var_name:
+            ax.set_xlim([-.01,xlims[-1]])
+        if 'precipitation' in y_var_name:
+            ax.set_ylim([-.01,ylims[-1]])
     else:
         xlims = [pl*x_fac+x_offs for pl in plt_lims[:2]]
         ylims = [pl*y_fac+y_offs for pl in plt_lims[2:]]
 
-        ax.set_xlim(xlims)
-        ax.set_ylim(ylims)
+    ax.set_xlim(xlims)
+    ax.set_ylim(ylims)
 
-    ax.vlines(x_clim_mean,ylims[0],ylims[1],color='k',ls='dashed',lw=2,label='obs')
-    ax.hlines(y_clim_mean,xlims[0],xlims[1],color='k',ls='dashed',lw=2)
+    ax.vlines(x_clim_mean,ylims[0],ylims[1],color='k',ls='solid',lw=2,label='obs')
+    ax.hlines(y_clim_mean,xlims[0],xlims[1],color='k',ls='solid',lw=2)
     ax.vlines(x_em,ylims[0],ylims[1],color='C0',lw=2,label='forecast')
     ax.hlines(y_em,xlims[0],xlims[1],color='C0',lw=2)
 
     if x_pred is not None:
-        ax.vlines(x_pred,ylims[0],ylims[1],color='C1',alpha=.5,ls='dashed',lw=2,label='trend')
+        ax.vlines(x_pred,ylims[0],ylims[1],color='C1',alpha=.5,ls='solid',lw=2,label='trend')
     if y_pred is not None:
-        ax.hlines(y_pred,xlims[0],xlims[1],color='C1',alpha=.5,ls='dashed',lw=2)
-    
-    if clim_x is not None and clim_y is not None:
-        #create scatterplot
-        ax.scatter(clim_x.values,clim_y.values,c='none',marker='.',zorder=10)
-
-        #use for loop to add annotations to each point in plot 
-        for i, clim_t in enumerate(clim_x.time):
-            txt = str(clim_t.dt.year.item())[2:]
-            ax.annotate(txt, (clim_x[i], clim_y[i]),fontsize=9,color='k',zorder=10,ha='center',va='center')
-        
+        ax.hlines(y_pred,xlims[0],xlims[1],color='C1',alpha=.5,ls='solid',lw=2)
     print(x_clim_mean,x_em.values,y_clim_mean,y_em.values)
 
     box = ax.get_position()
@@ -147,6 +152,10 @@ def bivariate_fc_plot(
     ax.set_ylabel('{0:s} [{1:s}]'.format(y_var_name.replace('_',' '),y_units),fontsize=18)
     ax.set_title(title,fontsize=24,y=1.1)
 
+    if print_n:
+        N = len(x_ensemble)
+        ax.text(.93,1.01,'N = {N:d}'.format(N=N),va='bottom',ha='left',fontsize=13,transform=ax.transAxes)
+
     ax.tick_params(axis='x', labelsize=15)
     ax.tick_params(axis='y', labelsize=15)
 
@@ -156,6 +165,7 @@ def bivariate_fc_plot(
             fig_name = 'unnamed'
         fig_name_full = os.path.join(save_path,fig_name)
         # save both as png and as pdf
+        print('writing {0:s}.png'.format(fig_name_full))
         f.savefig(fig_name_full + '.png',dpi=300,bbox_inches='tight')
         # f.savefig(fig_name_full + '.pdf',bbox_inches='tight')
         plt.close(f)

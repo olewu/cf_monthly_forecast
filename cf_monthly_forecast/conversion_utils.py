@@ -14,10 +14,10 @@ def convert_grib_to_netcdf(split_files,target_path,mode,split_keys=['[shortName]
 
     if prod_type == 'monthly':
         product = mfin.PRODUCT
-        var_df = mfin.variables_df
+        long_names = mfin.long_names
     elif prod_type == 'subdaily':
         product = sdfin.PRODUCT
-        var_df = sdfin.variables_df
+        long_names = sdfin.long_names
 
     assert split_keys, 'need to pass a list with at least one keyword to `split_keys'
 
@@ -32,7 +32,7 @@ def convert_grib_to_netcdf(split_files,target_path,mode,split_keys=['[shortName]
         # variable short name:
         vn_short = sngl_var_file.split('_')[0]
         # look up corresponding long name:
-        vn_long = var_df[var_df.short_name == vn_short].long_name.values[0]
+        vn_long = long_names[vn_short]
         
         # construct file name in new structure
         if mode == 'forecast':

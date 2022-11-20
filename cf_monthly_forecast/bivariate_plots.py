@@ -11,6 +11,11 @@ from cf_monthly_forecast.utils import quadrant_probs,find_closest_gp, get_statio
 from cf_monthly_forecast.plots import bivariate_fc_plot,derive_abs_limits
 from cf_monthly_forecast.utils import send_email
 
+# INIT_MON = initmonth
+# INIT_YEA = inityear
+# MODE = 'land'
+# ref_clim = 'stat'
+# locations=city_coords_lalo
 def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=city_coords_lalo):
     """
     Note that ref_clim = 'obs'  takes ERA5 as climatology, choose ref_clim = 'stat' for actual observed station normals!
@@ -26,8 +31,8 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
         locations.pop('Trondheim')
     else:
         clim_mean_mode = None
-    x_ds = xr.open_dataset(dirs['SFE_forecast'] + '/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,x_var))
-    y_ds = xr.open_dataset(dirs['SFE_forecast'] + '/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,y_var))
+    x_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,x_var))
+    y_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,y_var))
     
     ds_val = xr.open_dataset('/projects/NS9853K/DATA/SFE/Validation_Dataset/sfe_benchmark.nc4')
 
@@ -35,8 +40,8 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
 
     # find closest grid points to the required ones:
     closest_gp_dict = find_closest_gp(locations,mode=MODE)
+    closest_gp_dict_ = find_closest_gp(locations,mode=MODE,vers='old')
 
-    
     for (loc_name,latlon) in closest_gp_dict.items():
         # find closest grid point:
         x_loc = x_ds.sel(lat=latlon[0],lon=latlon[1])
@@ -44,11 +49,15 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
 
         if ref_clim != 'stat':
             # climatology (ERA5 & forecast system)
-            x_clim_loc = ds_val['{0:s}_{1:s}'.format(x_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
-            y_clim_loc = ds_val['{0:s}_{1:s}'.format(y_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+            # x_clim_loc = ds_val['{0:s}_{1:s}'.format(x_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+            # y_clim_loc = ds_val['{0:s}_{1:s}'.format(y_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+            x_clim_loc = ds_val['{0:s}_{1:s}'.format(x_var,ref_clim)].sel(forecast_month=INIT_MON,lat=closest_gp_dict_[loc_name][0],lon=closest_gp_dict_[loc_name][1])
+            y_clim_loc = ds_val['{0:s}_{1:s}'.format(y_var,ref_clim)].sel(forecast_month=INIT_MON,lat=closest_gp_dict_[loc_name][0],lon=closest_gp_dict_[loc_name][1])
         else:
-            x_clim_loc = ds_val['{0:s}_nwp'.format(x_var)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
-            y_clim_loc = ds_val['{0:s}_nwp'.format(y_var)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+            # x_clim_loc = ds_val['{0:s}_nwp'.format(x_var)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+            # y_clim_loc = ds_val['{0:s}_nwp'.format(y_var)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
+            x_clim_loc = ds_val['{0:s}_nwp'.format(x_var)].sel(forecast_month=INIT_MON,lat=closest_gp_dict_[loc_name][0],lon=closest_gp_dict_[loc_name][1])
+            y_clim_loc = ds_val['{0:s}_nwp'.format(y_var)].sel(forecast_month=INIT_MON,lat=closest_gp_dict_[loc_name][0],lon=closest_gp_dict_[loc_name][1])
         
             # get stations stats and trend prediction ahead of looping:
             stat_id = station_ids[loc_name]
@@ -162,7 +171,7 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
                 clim_y = clim_sel_y,
                 fc_probs = probs4,
                 clim_probs = clim_probs4,
-                plt_lims = plt_lims,
+                plt_lims = None,
                 x_var_name = x_var,
                 y_var_name = y_var,
                 x_fac = x_fac,
@@ -180,14 +189,14 @@ if __name__ == '__main__':
     y_var = 'total_precipitation'
 
     # direct `print` output to log file:
-    logfile_path = '{0:s}/logs/fc_bivariate_plt.log'.format(proj_base)
-    sys.stdout = open(logfile_path, 'a')
+    # logfile_path = '{0:s}/logs/fc_bivariate_plt.log'.format(proj_base)
+    # sys.stdout = open(logfile_path, 'a')
 
     tday = datetime.today()
     inityear,initmonth = tday.year,tday.month
     
-    filename_x = '{0:s}/forecast_production_detailed_{3:s}_{1:d}_{2:d}.nc4'.format(dirs['SFE_forecast'],inityear,initmonth,x_var)
-    filename_y = '{0:s}/forecast_production_detailed_{3:s}_{1:d}_{2:d}.nc4'.format(dirs['SFE_forecast'],inityear,initmonth,y_var)
+    filename_x = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,x_var)
+    filename_y = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,y_var)
 
     if os.path.isfile(filename_x) and os.path.isfile(filename_y):
         print('{0:} (UTC)\tForecast files exist, creating plots:\n'.format(datetime.now()))
@@ -203,7 +212,7 @@ if __name__ == '__main__':
             inityear,
             'land',
             'stat',
-            locations=city_coords_lalo
+            locations=city_coords_lalo.copy()
         )
 
         # write an index file if the script executes as expected:

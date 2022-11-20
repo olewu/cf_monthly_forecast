@@ -11,7 +11,8 @@ data_base           = '/projects/NS9853K/DATA/SFE'
 
 # other relevant locations:
 dirs = dict(
-    SFE_forecast    = os.path.join(data_base,'Forecasts'),
+    SFE_summary     = os.path.join(data_base,'Forecasts'),
+    SFE_monthly     = os.path.join(data_base,'cds_seasonal_forecast/monthly/monthly_mean/sfe'),
     test_data       = os.path.join(proj_base,'data/raw/'),
     station_norm    = os.path.join(proj_base,'data/external/'),
     processed       = os.path.join(proj_base,'data/processed/'),

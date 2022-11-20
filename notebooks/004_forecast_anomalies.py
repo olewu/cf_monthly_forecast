@@ -63,8 +63,8 @@ inityear = today.year
 plt_vars = []
 
 for pvar in pom.variables:
-    fname = '{0:s}/forecast_production_{3:s}_{1:d}_{2:d}.nc'.format(
-        dirs['SFE_forecast'],
+    fname = '{0:s}/{3:s}/forecast_production_{3:s}_{1:d}_{2:d}.nc'.format(
+        dirs['SFE_monthly'],
         inityear,
         initmonth,
         file_key[pvar]
@@ -111,7 +111,7 @@ try:
 
         #--------------------LOAD FORECAST DATA FOR REQUESTED VARIABLE--------------------#
         varf_name = file_key[variable]
-        FILE = '{0:s}/forecast_production_{3:s}_{1:d}_{2:d}.nc'.format(dirs['SFE_forecast'],inityear,initmonth,varf_name)
+        FILE = '{0:s}/{3:s}/forecast_production_{3:s}_{1:d}_{2:d}.nc'.format(dirs['SFE_monthly'],inityear,initmonth,varf_name)
         
         ds = xr.open_dataset(FILE)
 
