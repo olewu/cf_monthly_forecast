@@ -16,17 +16,24 @@ The paths are currently configured to work on Sigma2's NIRD system only.
 To make this work, first clone the environment to a place of yout choice.
 
 Install a conda environment with the minimum requirements by running:
+
 `conda env create -f env_mini.yml --name cf_forecast`
+
 To install the package's functionality run the following from the project root directory:
+
 `pip install -e .`
 
 
-Workflow:
+Workflow for downloads:
 
-`automation_download.sh` and `automation.sh` are regularly run (crontab) between the 13th and 23rd of every month. 
+`cf_monthly_forecast/automation_download.sh` and `cf_monthly_forecast/automation.sh` are scheduled (crontab) to regularly run between every 30 mins from the 13th and 23rd of every month. 
 
-`automation_download.sh` executes `cf_monthly_forecast/download_monthly_operational.py`.
+`cf_monthly_forecast/automation_download.sh` executes `cf_monthly_forecast/download_monthly_operational.py` whose output is logged in `logs/download_monthly_oper_<init_year>_<init_month>.log`. The routine goes through all forecast models and tries to retrieve the latest forecast. If one model does not exist, it will try the next one. For each successful download, a file is written in `data/index/dl/dl_complete_<model>_<init_year>-<init_month>.ix`. If all models were downloaded correctly, another file `data/index/dl/dl_complete_<init_year>-<init_month>.ix` is created. Once this file exists, `cf_monthly_forecast/automation_download.sh` will not execute `cf_monthly_forecast/download_monthly_operational.py` any longer.
 
+
+Workflow for figure production:
+
+...
 
 --------
 
