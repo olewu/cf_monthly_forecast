@@ -169,14 +169,14 @@ def main(init_date):
 
                 #----------------2.2) SPLIT BY VARIABLE & CONVERT TO NETCDF----------------#
                 # split hindcasts in the same manner (must include hindcast year in split),  this can take up to 2 mins:
-                grib_split_hc,splt_date_key = split_grib(outfile_hc,mode='hindcast',product_type=mfin.PRODUCT,delete_input=True)
+                grib_split_hc,splt_date_key = split_grib(outfile_hc,mode='hindcast',product_type=mfin.temp_res,delete_input=True)
                 
                 convert_grib_to_netcdf(
                     grib_split_hc,
                     lookup_path,
                     mode        = 'hindcast',
                     split_keys  = ['[shortName]',splt_date_key],
-                    prod_type   = mfin.PRODUCT
+                    prod_type   = mfin.temp_res
                 )
             
                 # if the loop ran to this point, create a file indicating that the forecast for the specified init date and model exists:
@@ -200,6 +200,7 @@ def main(init_date):
 
 if __name__ == '__main__':
     # get today's date:
-    # init = datetime(2022,5,1)
-    init = datetime.today()
-    main(init)
+    for fcy in range(2017,2023):
+        init = datetime(fcy,11,1)
+        # init = datetime.today()
+        main(init)

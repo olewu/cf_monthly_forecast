@@ -50,8 +50,11 @@ def convert_grib_to_netcdf(split_files,target_path,mode,split_keys=['[shortName]
         elif mode == 'hindcast' and prod_type == 'monthly':
             assert len(split_keys) > 1, 'must split hindcasts with variable name and hindcast year keywords'
 
-            # indexingDate to desired format:
-            idx_date = re.search('_(\d+).grib',sngl_var_file).groups()[0]
+            try:
+                # indexingDate to desired format:
+                idx_date = re.search('_(\d+).grib',sngl_var_file).groups()[0]
+            except:
+                continue
 
             # construct file name in new structure
             sngl_var_file_in_struct = sngl_var_file.replace(
@@ -123,11 +126,12 @@ def split_grib(grib_file,mode='forecast',product_type='monthly',delete_input=Fal
         split_complete = sbp.run(['grib_copy',grib_file,grib_split])
         # if the split was successful, remove the downloaded single file
     elif mode == 'hindcast':
+        version_ = re.search('{0:s}_(\d+)_'.format(model_),grib_file)[1]
         # split hindcasts in the same manner (must include hindcast year in split),  this can take up to 2 mins:
-        if model_ in model_init_mode['lagged']:
-            splt_date_key = '[indexingDate]' # want to sort by indexing date if model is initialized in lagged mode
-        elif model_ in model_init_mode['burst']:
+        if model_ in model_init_mode['burst'] or (model_ == 'ukmo' and int(version_) < 15): # before version 15, ukmo was run in burst mode!
             splt_date_key = '[dataDate]'
+        else:
+            splt_date_key = '[indexingDate]' # want to sort by indexing date if model is initialized in lagged mode
         
         if os.path.exists(grib_file):
             print('splitting hindcast grib file')
