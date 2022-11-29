@@ -9,29 +9,35 @@ CF_monthly_forecast
 
 Production of Climate Futures monthly multi-model forecasts and visualization (runs automatically on Sigma2's NIRD server)
 
-To run the downloading, you need a user account at the CDS.
+## Installation
 
-The paths are currently configured to work on Sigma2's NIRD system only.
-
-To make this work, first clone the environment to a place of yout choice.
+First, clone the environment to a place of your choice.
 
 Install a conda environment with the minimum requirements by running:
 
 `conda env create -f env_mini.yml --name cf_forecast`
 
-To install the package's functionality run the following from the project root directory:
+To install the package's functionality, run the following from the project root directory with the `cf_forecast` environment activated:
 
 `pip install -e .`
 
+## Configuration
 
-Workflow for downloads:
+To be able to download data from the CDS, you need a user account at [Copernicus](https://cds.climate.copernicus.eu/#!/home).
+
+The data paths are currently configured to work on Sigma2's [NIRD system](https://documentation.sigma2.no/files_storage/nird.html) only. A lot of the functionality relies on the way that the forecast data are saved on NIRD. 
+
+To configure the package, go to `cf_monthly_forecast/config.py` and set the `proj_base` path to the path you cloned the package to. In the same file, set the email address to your own. Some scripts send emails on the status of their execution and if this address is not set, you will not get them.
+
+## Functionality
+### Workflow for downloads:
 
 `cf_monthly_forecast/automation_download.sh` and `cf_monthly_forecast/automation.sh` are scheduled (crontab) to regularly run between every 30 mins from the 13th and 23rd of every month. 
 
 `cf_monthly_forecast/automation_download.sh` executes `cf_monthly_forecast/download_monthly_operational.py` whose output is logged in `logs/download_monthly_oper_<init_year>_<init_month>.log`. The routine goes through all forecast models and tries to retrieve the latest forecast. If one model does not exist, it will try the next one. For each successful download, a file is written in `data/index/dl/dl_complete_<model>_<init_year>-<init_month>.ix`. If all models were downloaded correctly, another file `data/index/dl/dl_complete_<init_year>-<init_month>.ix` is created. Once this file exists, `cf_monthly_forecast/automation_download.sh` will not execute `cf_monthly_forecast/download_monthly_operational.py` any longer.
 
 
-Workflow for figure production:
+### Workflow for figure production:
 
 ...
 
