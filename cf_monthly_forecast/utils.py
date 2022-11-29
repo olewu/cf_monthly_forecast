@@ -115,7 +115,7 @@ def latest_sys_from_existing(model,year,month,mode='monthly'):
     all_files = glob(lookup_path + '/*/*{:}_{:}*.nc'.format(year,month))
     
     # extractnsystem number:
-    sysn = [re.search('{:s}_\d+_'.format(model),fi)[0].replace('_','').replace(model,'') for fi in all_files]
+    sysn = [re.search('{:s}_(\d+)_'.format(model),fi)[1] for fi in all_files]
 
     sys_num = list(set(sysn))
 
