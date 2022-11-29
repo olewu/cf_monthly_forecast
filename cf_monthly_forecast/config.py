@@ -7,20 +7,20 @@ email_address = 'owul@norceresearch.no'
 
 # base directory of the project:
 proj_base           = '/projects/NS9001K/owul/projects/cf_monthly_forecast'
-data_base           = '/projects/NS9853K/DATA/SFE'
+data_base           = '/projects/NS9853K/'
 
 # other relevant locations:
 dirs = dict(
-    SFE_summary     = os.path.join(data_base,'Forecasts'),
-    SFE_monthly     = os.path.join(data_base,'cds_seasonal_forecast/monthly/monthly_mean/sfe'),
+    SFE_summary     = os.path.join(data_base,'DATA/SFE/Forecasts'),
+    SFE_monthly     = os.path.join(data_base,'DATA/SFE/cds_seasonal_forecast/monthly/monthly_mean/sfe'),
+    public          = os.path.join(data_base,'www/'),
+    cds_data        = os.path.join(data_base,'DATA/SFE/cds_seasonal_forecast'),
+    senorge         = '/projects/NS9853K/DATA/senorge/',
     test_data       = os.path.join(proj_base,'data/raw/'),
     station_norm    = os.path.join(proj_base,'data/external/'),
     processed       = os.path.join(proj_base,'data/processed/'),
-    public          = '/projects/NS9853K/www/',
     figures         = os.path.join(proj_base,'figures/'),
     inventory       = os.path.join(proj_base,'data/inventory/'),
-    cds_data        = os.path.join(data_base,'cds_seasonal_forecast'),
-    senorge         = '/projects/NS9853K/DATA/senorge/'
 )
 
 model_init_mode = {
@@ -31,6 +31,16 @@ model_init_mode = {
 # all available models:
 all_models = ['ecmwf','meteo_france','dwd','cmcc','ukmo','ncep','eccc','jma']
 # Note that the the last three models in this last are last on purpose. They aren't part of the MME as of now, so downloading them has low priority!
+
+# system numbers assigned by Alex in production files:
+dt_systems_lookups = {
+    1: "cmcc",
+    2: "dwd",
+    3: "ecmwf",
+    4: "meteo_france",
+    5: "ukmo",
+    6: "bccr",
+}
 
 # map short names to long names:
 file_key = dict(
