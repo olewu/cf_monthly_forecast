@@ -189,8 +189,8 @@ if __name__ == '__main__':
     y_var = 'total_precipitation'
 
     # direct `print` output to log file:
-    # logfile_path = '{0:s}/logs/fc_bivariate_plt.log'.format(proj_base)
-    # sys.stdout = open(logfile_path, 'a')
+    logfile_path = '{0:s}/logs/fc_bivariate_plt.log'.format(proj_base)
+    sys.stdout = open(logfile_path, 'a')
 
     tday = datetime.today()
     inityear,initmonth = tday.year,tday.month
