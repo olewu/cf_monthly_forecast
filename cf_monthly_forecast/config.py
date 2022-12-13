@@ -1,12 +1,13 @@
 # define some global parameters:
 
 import os
+from pathlib import Path
 
 # email address to send unexpected program failures to:
 email_address = 'owul@norceresearch.no'
 
 # base directory of the project:
-proj_base           = '/projects/NS9001K/owul/projects/cf_monthly_forecast'
+proj_base           = str(Path(os.path.dirname(os.path.realpath(__file__))).parents[0])
 data_base           = '/projects/NS9853K/'
 
 # other relevant locations:
