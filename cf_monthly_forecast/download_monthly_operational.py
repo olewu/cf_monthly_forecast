@@ -199,8 +199,9 @@ def main(init_date):
 
 
 if __name__ == '__main__':
+    # to run for historical forecasts:
+    # for fcy in range(2017,2023):
+    #     init = datetime(fcy,11,1)
     # get today's date:
-    for fcy in range(2017,2023):
-        init = datetime(fcy,11,1)
-        # init = datetime.today()
-        main(init)
+    init = datetime.today()
+    main(init)
