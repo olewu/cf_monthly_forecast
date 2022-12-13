@@ -21,13 +21,15 @@ To install the package's functionality, run the following from the project root 
 
 `pip install -e .`
 
+The `-e` option installs the package in editable mode, so any change you make will be effective as soon as you re-import the package (no need to re-install).
+
 ## Configuration
 
 To be able to download data from the CDS, you need a user account at [Copernicus](https://cds.climate.copernicus.eu/#!/home).
 
 The data paths are currently configured to work on Sigma2's [NIRD system](https://documentation.sigma2.no/files_storage/nird.html) only. A lot of the functionality relies on the way that the forecast data are saved on NIRD. 
 
-To configure the package, go to `cf_monthly_forecast/config.py` and set the `proj_base` path to the path you cloned the package to. In the same file, set the email address to your own. Some scripts send emails on the status of their execution and if this address is not set, you will not get them.
+In `cf_monthly_forecast/config.py`, you can set the email address to your own. Some scripts send emails on the status of their execution and if this address is not set, you will not get them.
 
 ## Functionality
 ### Workflow for downloads:
