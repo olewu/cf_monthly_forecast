@@ -15,7 +15,7 @@ import sys
 from datetime import datetime
 import re
 from cf_monthly_forecast.config import *
-from cf_monthly_forecast.utils import sysnum_from_grib, get_missing_hindcast_fields, reduce_vars, derive_path, latest_sys_from_existing
+from cf_monthly_forecast.utils import sysnum_from_grib, get_missing_hindcast_fields, reduce_vars, derive_path, latest_sys_from_existing, send_email
 from cf_monthly_forecast.conversion_utils import convert_grib_to_netcdf, split_grib
 import cf_monthly_forecast.monthly_fc_input as mfin
 
@@ -122,6 +122,11 @@ def main(init_date):
 
             # if the loop ran to this point, create a file indicating that the forecast for the specified init date and model exists:
             sbp.run(['touch',idx_file])
+            # also send an email to notify the user:
+            send_email(
+                '{0:s} monthly forecast download complete'.format(MODEL),
+                'Download of {0:s} forecast (monthly output) finished successfully.'.format(MODEL),
+            )
         else:
             # need SYSTEM and lookup_path:
             SYSTEM,lookup_path = latest_sys_from_existing(MODEL,YEAR,MONTH)

@@ -5,6 +5,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
 import sys
+import json
 
 from cf_monthly_forecast.config import *
 from cf_monthly_forecast.utils import quadrant_probs,find_closest_gp, get_station_stats, predict_from_monthly_trend, get_station_data
@@ -197,6 +198,15 @@ if __name__ == '__main__':
     
     filename_x = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,x_var)
     filename_y = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,y_var)
+
+    # derive set of models in MME from the system dimension of the above file(s):
+    with xr.open_dataset(filename_x) as DS:
+        participating_systems_id = set(DS.system.values)
+    participating_systems = [dt_systems_lookups[int(ps)] for ps in participating_systems_id]
+    # save to json for other pltting routines to look up systems:
+    ps_filename = os.path.join('{0:s}'.format(dirs['processed']),'systems_{0:d}-{1:0>2d}.json'.format(inityear,initmonth))
+    with open(ps_filename, 'w') as f:
+        json.dump(participating_systems, f)
 
     if os.path.isfile(filename_x) and os.path.isfile(filename_y):
         print('{0:} (UTC)\tForecast files exist, creating plots:\n'.format(datetime.now()))

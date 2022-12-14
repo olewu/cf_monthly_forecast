@@ -2,6 +2,16 @@
 # check if the script has already successfully executed this month (which is the case if the below file exists),
 # only execute if the file does not exist
 
+if [ ! -e /projects/NS9001K/owul/projects/cf_monthly_forecast/data/index/complete_biv_$(date +%Y)-$(date +%m).ix ]
+then
+source /nird/home/owul/miniconda3/etc/profile.d/conda.sh # look for <base_path>/etc/profile.d/conda.sh in <base_path> given by conda info | grep -i 'base environment'
+# activate the environment:
+conda activate cf_monthly_forecast
+# run plotting routine:
+ipython /projects/NS9001K/owul/projects/cf_monthly_forecast/cf_monthly_forecast/bivariate_plots.py
+fi
+
+# Conduct a similar check for the probability plots.
 if [ ! -e /projects/NS9001K/owul/projects/cf_monthly_forecast/data/index/complete_$(date +%Y)-$(date +%m).ix ]
 then
 source /nird/home/owul/miniconda3/etc/profile.d/conda.sh # look for <base_path>/etc/profile.d/conda.sh in <base_path> given by conda info | grep -i 'base environment'
@@ -22,16 +32,6 @@ source /nird/home/owul/miniconda3/etc/profile.d/conda.sh # look for <base_path>/
 conda activate cf_monthly_forecast
 # run plotting routine:
 ipython /projects/NS9001K/owul/projects/cf_monthly_forecast/notebooks/004_forecast_anomalies.py
-fi
-
-# Conduct a similar check for the bivariate plots.
-if [ ! -e /projects/NS9001K/owul/projects/cf_monthly_forecast/data/index/complete_biv_$(date +%Y)-$(date +%m).ix ]
-then
-source /nird/home/owul/miniconda3/etc/profile.d/conda.sh # look for <base_path>/etc/profile.d/conda.sh in <base_path> given by conda info | grep -i 'base environment'
-# activate the environment:
-conda activate cf_monthly_forecast
-# run plotting routine:
-ipython /projects/NS9001K/owul/projects/cf_monthly_forecast/cf_monthly_forecast/bivariate_plots.py
 fi
 
 FC_FILENAME='forecast_'$(date +%Y)_$(date +%m)'.nc4'

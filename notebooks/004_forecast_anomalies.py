@@ -6,6 +6,7 @@
 import os
 import subprocess as sbp
 import sys
+import json
 
 # project specific configurations:
 from cf_monthly_forecast.config import *
@@ -54,7 +55,7 @@ model = 'ens_mean_anom'
 
 # get current date during time of running the script:
 today = datetime.today()
-# today = datetime(2022,7,15)
+# today = datetime(2022,11,15)
 initmonth = today.month
 inityear = today.year
 
@@ -97,6 +98,16 @@ if os.path.isfile(idx_file_missing):
 figdir = '{0:s}/monthly_fc/init_{1:s}-{2:s}/anomalies/'.format(
     dirs['public'],str(inityear).zfill(4),str(initmonth).zfill(2)
 )
+
+#--------------------CHECK IF JSON FILE WITH THE PARTICIPATING SYSTEMS EXISTS--------------------#
+# try loading the json file that contains info on the systems participating in the MME:
+ps_filename = os.path.join('{0:s}'.format(dirs['processed']),'systems_{0:d}-{1:0>2d}.json'.format(inityear,initmonth))
+if os.path.isfile(ps_filename):
+    with open(ps_filename, 'r') as f:
+        participating_systems = json.load(f)
+else:
+    # if it doesn't find the json file it will assume all systems are there
+    participating_systems = [sys for _,sys in dt_systems_lookups.items()]
 
 # send email in case the script fails for some reason (error message will be in log file)!
 try:
@@ -245,12 +256,18 @@ try:
                         plt.text(0.01,.99,t1,fontweight='bold',fontsize=FS-2,**tkw)
                         t = {'no':'Finansiert av Forskningsrådet','en':'Funded by the Research Council of Norway'}[lang]
                         t += '\n%s:'%{'no':'Basert på data fra','en':'Based on data from'}[lang]
-                        t += '\nECMWF (%s)'%{'no':'Europa','en':'Europe'}[lang]
-                        t += '\nUK Met Office (%s)'%{'no':'Storbritannia','en':'UK'}[lang]
-                        t += '\nCMCC (%s)'%{'no':'Italia','en':'Italy'}[lang]
-                        t += '\nMétéo France (%s)'%{'no':'Frankrike','en':'France'}[lang]
-                        t += '\nDWD (%s)'%{'no':'Tyskland','en':'Germany'}[lang]
-                        t += '\nBjerknes Centre (%s)'%{'no':'Norge','en':'Norway'}[lang]
+                        if 'ecmwf' in participating_systems:
+                            t += '\nECMWF (%s)'%{'no':'Europa','en':'Europe'}[lang]
+                        if 'ukmo' in participating_systems:
+                            t += '\nUK Met Office (%s)'%{'no':'Storbritannia','en':'UK'}[lang]
+                        if 'cmcc' in participating_systems:	
+                            t += '\nCMCC (%s)'%{'no':'Italia','en':'Italy'}[lang]
+                        if 'meteo_france' in participating_systems:	
+                            t += '\nMétéo France (%s)'%{'no':'Frankrike','en':'France'}[lang]
+                        if 'dwd' in participating_systems:	
+                            t += '\nDWD (%s)'%{'no':'Tyskland','en':'Germany'}[lang]
+                        if 'bccr' in participating_systems:	
+                            t += '\nBjerknes Centre (%s)'%{'no':'Norge','en':'Norway'}[lang]
                         t += '\n{0:s} {1:d} {2:s} {3:d}'.format({'no':'Utarbeidet','en':'Produced'}[lang],today.day,pla.monthnames[lang][today.month-1],today.year)
                         plt.text(0.01,.94,t,fontsize=FS-4,**tkw)
                     plt.title(title,fontsize = FS-1)
@@ -519,12 +536,18 @@ try:
                             plt.text(0.01,.99,t1,fontweight='bold',fontsize=FS-2,**tkw)
                             t = {'no':'Finansiert av Forskningsrådet','en':'Funded by the Research Council of Norway'}[lang]
                             t += '\n%s:'%{'no':'Basert på data fra','en':'Based on data from'}[lang]
-                            t += '\nECMWF (%s)'%{'no':'Europa','en':'Europe'}[lang]
-                            t += '\nUK Met Office (%s)'%{'no':'Storbritannia','en':'UK'}[lang]
-                            t += '\nCMCC (%s)'%{'no':'Italia','en':'Italy'}[lang]
-                            t += '\nMétéo France (%s)'%{'no':'Frankrike','en':'France'}[lang]
-                            t += '\nDWD (%s)'%{'no':'Tyskland','en':'Germany'}[lang]
-                            t += '\nBjerknes Centre (%s)'%{'no':'Norge','en':'Norway'}[lang]
+                            if 'ecmwf' in participating_systems:
+                                t += '\nECMWF (%s)'%{'no':'Europa','en':'Europe'}[lang]
+                            if 'ukmo' in participating_systems:
+                                t += '\nUK Met Office (%s)'%{'no':'Storbritannia','en':'UK'}[lang]
+                            if 'cmcc' in participating_systems:	
+                                t += '\nCMCC (%s)'%{'no':'Italia','en':'Italy'}[lang]
+                            if 'meteo_france' in participating_systems:	
+                                t += '\nMétéo France (%s)'%{'no':'Frankrike','en':'France'}[lang]
+                            if 'dwd' in participating_systems:	
+                                t += '\nDWD (%s)'%{'no':'Tyskland','en':'Germany'}[lang]
+                            if 'bccr' in participating_systems:	
+                                t += '\nBjerknes Centre (%s)'%{'no':'Norge','en':'Norway'}[lang]
                             t += '\n{0:s} {1:d} {2:s} {3:d}'.format({'no':'Utarbeidet','en':'Produced'}[lang],today.day,pla.monthnames[lang][today.month-1],today.year)
                             plt.text(0.01,.94,t,fontsize=FS-4,**tkw)
                         plt.title(title,fontsize = FS-1)
