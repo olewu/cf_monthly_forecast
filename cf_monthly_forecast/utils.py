@@ -77,7 +77,16 @@ def get_varnums(varlist,var_names):
             key_t = 'total_precipitation'
         elif key in ['wsp']:
             key_t = '10m_wind_speed'
-        # ... can define arbitrary number of other shorthands here
+        elif key in ['msl']:
+            key_t = 'mean_sea_level_pressure'
+        elif key in ['sst']:
+            key_t = 'sea_surface_temperature'
+        elif key in ['snow','mtsfr']:
+            key_t = 'snowfall'
+        elif key in ['u10m']:
+            key_t = '10m_u_component_of_wind'
+        elif key in ['v10m']:
+            key_t = '10m_v_component_of_wind'
         else:
             key_t = key
         

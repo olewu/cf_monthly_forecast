@@ -114,8 +114,6 @@ try:
     # create a folder for the initialization if it doesn't already exist:
     if not os.path.exists(figdir):
         os.makedirs(figdir,exist_ok=False) # creates directories recursively!
-    if not os.path.exists(figdir + 'smoothed/'):
-        os.makedirs(figdir + 'smoothed/',exist_ok=False)
 
 
     for variable in plt_vars:
@@ -421,7 +419,7 @@ try:
                     
                     # print(filename_sm2)
 
-                    # fig_sm2.fig.savefig('{0:s}smoothed/{1:s}.png'.format(figdir,filename_sm2),dpi=300)
+                    # fig_sm2.fig.savefig('{0:s}{1:s}.png'.format(figdir,filename_sm2),dpi=300)
                     plt.close(fig_sm2.fig)
 
         

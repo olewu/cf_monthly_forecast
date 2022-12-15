@@ -8,7 +8,7 @@ email_address = 'owul@norceresearch.no'
 
 # base directory of the project:
 proj_base           = str(Path(os.path.dirname(os.path.realpath(__file__))).parents[0])
-data_base           = '/projects/NS9853K/'
+data_base           = '/projects/NS9853K/' # '/nird/projects/NS9853K/' on the new NIRD-LDM system
 
 # other relevant locations:
 dirs = dict(
@@ -16,7 +16,7 @@ dirs = dict(
     SFE_monthly     = os.path.join(data_base,'DATA/SFE/cds_seasonal_forecast/monthly/monthly_mean/sfe'),
     public          = os.path.join(data_base,'www/'),
     cds_data        = os.path.join(data_base,'DATA/SFE/cds_seasonal_forecast'),
-    senorge         = '/projects/NS9853K/DATA/senorge/',
+    senorge         = os.path.join(data_base,'DATA/senorge/'),
     test_data       = os.path.join(proj_base,'data/raw/'),
     station_norm    = os.path.join(proj_base,'data/external/'),
     processed       = os.path.join(proj_base,'data/processed/'),
@@ -47,25 +47,45 @@ dt_systems_lookups = {
 file_key = dict(
     t2 = '2m_temperature',
     pr = 'total_precipitation',
-    wsp = '10m_wind_speed'
+    wsp = '10m_wind_speed',
+    msl = 'mean_sea_level_pressure',
+    sst = 'sea_surface_temperature',
+    snow = 'snowfall',
+    u10m = '10m_u_component_of_wind',
+    v10m = '10m_v_component_of_wind',
 )
 
 long_names = dict(
     t2 = dict(en='Temperature (2m)',no='Temperatur (2m)'),
     pr = dict(en='Precipitation',no='Nedbør'),
-    wsp = dict(en='Wind Speed (10m)',no='wind hastighet (10m)')
+    wsp = dict(en='Wind Speed (10m)',no='Wind Hastighet (10m)'),
+    msl = dict(en='Mean Sea Level Pressure', no='Midelere Bakketrykk'),
+    sst = dict(en='Sea Surface Temperature', no='Sjøtemperatur'),
+    snow = dict(en='Snowfall', no='Snøfall'),
+    u10m = dict(en='Zonal Wind (10m)', no='Zonal Wind (10m)'),
+    v10m = dict(en='Meridional Wind (10m)', no='Meridional Wind (10m)'),
 )
 
 units_plot = dict(
     t2 = '˚C',
     pr = 'mm', # accumulated over entire month
-    wsp = 'm/s'
+    wsp = 'm/s',
+    msl = 'hPa',
+    sst = '˚C',
+    snow = '?',
+    u10m = 'm/s',
+    v10m = 'm/s',
 )
 
 units_tf_factor = dict(
     t2 = 1,
     pr = 1000, # ERA5 precip from monthly averaged files is in m/day, so for mm accumulated over month, need to multiply by 1000 to get to mm and by nr of days in resp month (external)
-    wsp = 1 # 1 m/s = (1/1000 km) / (1/(60*60) h) = 3.6 km/h
+    wsp = 1, # 1 m/s = (1/1000 km) / (1/(60*60) h) = 3.6 km/h,
+    msl = 1/100, # Pa to hPa
+    sst = 1,
+    snow = 1,
+    u10m = 1,
+    v10m = 1,
 )
 
 city_coords_lalo = {
