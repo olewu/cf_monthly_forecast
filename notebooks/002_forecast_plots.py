@@ -470,8 +470,8 @@ try:
             shell=True
         )
 
-        subj = 'Successful: Monthly forecast probability plot production done {:}'.format(datetime.now())
-        send_email(subj,subj)
+    subj = 'Successful: Monthly forecast probability plot production done {:}'.format(datetime.now())
+    send_email(subj,subj)
 except Exception as e:
     # send email
     print(e)
