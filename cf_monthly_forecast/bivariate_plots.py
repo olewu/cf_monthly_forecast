@@ -35,7 +35,7 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
     x_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,x_var))
     y_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:d}.nc4'.format(INIT_MON,INIT_YEA,y_var))
     
-    ds_val = xr.open_dataset('/projects/NS9853K/DATA/SFE/Validation_Dataset/sfe_benchmark.nc4')
+    ds_val = xr.open_dataset('/projects/NS9873K/DATA/SFE/Validation_Dataset/sfe_benchmark.nc4')
 
     init_date = datetime(INIT_YEA,INIT_MON,1)
 

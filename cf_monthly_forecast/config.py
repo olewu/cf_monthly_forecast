@@ -8,7 +8,7 @@ email_address = 'lenkoski@nr.no'
 
 # base directory of the project:
 proj_base           = str(Path(os.path.dirname(os.path.realpath(__file__))).parents[0])
-data_base           = '/projects/NS9853K/' # '/nird/projects/NS9873K/' on the new NIRD-LDM system
+data_base           = '/projects/NS9873K/' # '/nird/projects/NS9873K/' on the new NIRD-LDM system
 
 # other relevant locations:
 dirs = dict(
