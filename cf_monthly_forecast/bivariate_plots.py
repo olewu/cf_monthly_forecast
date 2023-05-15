@@ -196,8 +196,8 @@ if __name__ == '__main__':
     tday = datetime.today()
     inityear,initmonth = tday.year,tday.month
     
-    filename_x = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,x_var)
-    filename_y = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,y_var)
+    filename_x = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:02d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,x_var)
+    filename_y = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:02d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,y_var)
 
     # derive set of models in MME from the system dimension of the above file(s):
     with xr.open_dataset(filename_x) as DS:
