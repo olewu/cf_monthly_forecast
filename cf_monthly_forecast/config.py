@@ -13,6 +13,7 @@ data_base           = '/projects/NS9873K/' # '/nird/projects/NS9873K/' on the ne
 # other relevant locations:
 dirs = dict(
     SFE_summary     = os.path.join(data_base,'DATA/SFE/Forecasts'),
+    SFE_validation  = os.path.join(data_base,'DATA/SFE/Validation_Dataset'),
     SFE_monthly     = os.path.join(data_base,'DATA/SFE/cds_seasonal_forecast/monthly/monthly_mean/sfe'),
     public          = os.path.join(data_base,'www/'),
     cds_data        = os.path.join(data_base,'DATA/SFE/cds_seasonal_forecast'),

@@ -32,10 +32,10 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
         locations.pop('Trondheim')
     else:
         clim_mean_mode = None
-    x_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:02d}.nc4'.format(INIT_MON,INIT_YEA,x_var))
-    y_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:02d}.nc4'.format(INIT_MON,INIT_YEA,y_var))
+    x_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:0>2d}.nc4'.format(INIT_MON,INIT_YEA,x_var))
+    y_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:0>2d}.nc4'.format(INIT_MON,INIT_YEA,y_var))
     
-    ds_val = xr.open_dataset('/projects/NS9873K/DATA/SFE/Validation_Dataset/sfe_benchmark.nc4')
+    ds_val = xr.open_dataset(dirs['SFE_validation'] + '/sfe_benchmark.nc4')
 
     init_date = datetime(INIT_YEA,INIT_MON,1)
 
@@ -191,13 +191,14 @@ if __name__ == '__main__':
 
     # direct `print` output to log file:
     logfile_path = '{0:s}/logs/fc_bivariate_plt.log'.format(proj_base)
-    sys.stdout = open(logfile_path, 'a')
+    # sys.stdout = open(logfile_path, 'a')
 
-    tday = datetime.today()
+    # tday = datetime.today()
+    tday = datetime(2023,6,15)
     inityear,initmonth = tday.year,tday.month
     
-    filename_x = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:02d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,x_var)
-    filename_y = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:02d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,y_var)
+    filename_x = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:0>2d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,x_var)
+    filename_y = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:0>2d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,y_var)
 
     # derive set of models in MME from the system dimension of the above file(s):
     with xr.open_dataset(filename_x) as DS:
