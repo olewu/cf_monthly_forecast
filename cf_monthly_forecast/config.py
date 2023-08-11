@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 # email address to send unexpected program failures to:
-email_address = 'lenkoski@nr.no'
+email_address = 'owul@norceresearch.no'
 
 # base directory of the project:
 proj_base           = str(Path(os.path.dirname(os.path.realpath(__file__))).parents[0])

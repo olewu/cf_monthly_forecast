@@ -16,7 +16,7 @@ from cf_monthly_forecast.utils import send_email
 # INIT_YEA = inityear
 # MODE = 'land'
 # ref_clim = 'stat'
-# locations=city_coords_lalo
+# locations=city_coords_lalo.copy()
 def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=city_coords_lalo):
     """
     Note that ref_clim = 'obs'  takes ERA5 as climatology, choose ref_clim = 'stat' for actual observed station normals!
@@ -41,7 +41,7 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
 
     # find closest grid points to the required ones:
     closest_gp_dict = find_closest_gp(locations,mode=MODE)
-    closest_gp_dict_ = find_closest_gp(locations,mode=MODE,vers='old')
+    # closest_gp_dict_ = find_closest_gp(locations,mode=MODE,vers='new')
 
     for (loc_name,latlon) in closest_gp_dict.items():
         # find closest grid point:
@@ -52,13 +52,15 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
             # climatology (ERA5 & forecast system)
             # x_clim_loc = ds_val['{0:s}_{1:s}'.format(x_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
             # y_clim_loc = ds_val['{0:s}_{1:s}'.format(y_var,ref_clim)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
-            x_clim_loc = ds_val['{0:s}_{1:s}'.format(x_var,ref_clim)].sel(forecast_month=INIT_MON,lat=closest_gp_dict_[loc_name][0],lon=closest_gp_dict_[loc_name][1])
-            y_clim_loc = ds_val['{0:s}_{1:s}'.format(y_var,ref_clim)].sel(forecast_month=INIT_MON,lat=closest_gp_dict_[loc_name][0],lon=closest_gp_dict_[loc_name][1])
+            x_clim_loc = ds_val['{0:s}_{1:s}'.format(x_var,ref_clim)].sel(forecast_month=INIT_MON,lat=closest_gp_dict[loc_name][0],lon=closest_gp_dict[loc_name][1])
+            y_clim_loc = ds_val['{0:s}_{1:s}'.format(y_var,ref_clim)].sel(forecast_month=INIT_MON,lat=closest_gp_dict[loc_name][0],lon=closest_gp_dict[loc_name][1])
         else:
             # x_clim_loc = ds_val['{0:s}_nwp'.format(x_var)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
             # y_clim_loc = ds_val['{0:s}_nwp'.format(y_var)].sel(forecast_month=INIT_MON,lat=latlon[0],lon=latlon[1])
-            x_clim_loc = ds_val['{0:s}_nwp'.format(x_var)].sel(forecast_month=INIT_MON,lat=closest_gp_dict_[loc_name][0],lon=closest_gp_dict_[loc_name][1])
-            y_clim_loc = ds_val['{0:s}_nwp'.format(y_var)].sel(forecast_month=INIT_MON,lat=closest_gp_dict_[loc_name][0],lon=closest_gp_dict_[loc_name][1])
+            # x_clim_loc = ds_val['{0:s}_nwp'.format(x_var)].sel(forecast_month=INIT_MON,lat=closest_gp_dict[loc_name][0],lon=closest_gp_dict[loc_name][1])
+            # y_clim_loc = ds_val['{0:s}_nwp'.format(y_var)].sel(forecast_month=INIT_MON,lat=closest_gp_dict[loc_name][0],lon=closest_gp_dict[loc_name][1])
+            x_clim_loc = ds_val['{0:s}_nwp'.format(x_var)].sel(forecast_month=INIT_MON).interp(lat=closest_gp_dict[loc_name][0],lon=closest_gp_dict[loc_name][1])
+            y_clim_loc = ds_val['{0:s}_nwp'.format(y_var)].sel(forecast_month=INIT_MON).interp(lat=closest_gp_dict[loc_name][0],lon=closest_gp_dict[loc_name][1])
         
             # get stations stats and trend prediction ahead of looping:
             stat_id = station_ids[loc_name]
@@ -191,10 +193,9 @@ if __name__ == '__main__':
 
     # direct `print` output to log file:
     logfile_path = '{0:s}/logs/fc_bivariate_plt.log'.format(proj_base)
-    # sys.stdout = open(logfile_path, 'a')
+    sys.stdout = open(logfile_path, 'a')
 
-    # tday = datetime.today()
-    tday = datetime(2023,6,15)
+    tday = datetime.today()
     inityear,initmonth = tday.year,tday.month
     
     filename_x = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:0>2d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,x_var)
