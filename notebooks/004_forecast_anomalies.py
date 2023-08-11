@@ -28,7 +28,7 @@ from cf_monthly_forecast.smooth2d import box_smooth_2D
 # plotting
 import matplotlib.pyplot as plt
 from cf_monthly_forecast.vis_utils import TWOCOLUMN_WIDTH_INCHES,SubplotFigure
-from mpl_toolkits.basemap import Basemap
+# from mpl_toolkits.basemap import Basemap
 
 # function to send email
 from cf_monthly_forecast.utils import send_email
@@ -64,7 +64,7 @@ inityear = today.year
 plt_vars = []
 
 for pvar in pom.variables:
-    fname = '{0:s}/{3:s}/forecast_production_{3:s}_{1:d}_{2:d}.nc'.format(
+    fname = '{0:s}/{3:s}/forecast_production_{3:s}_{1:d}_{2:0>2d}.nc'.format(
         dirs['SFE_monthly'],
         inityear,
         initmonth,
@@ -120,7 +120,7 @@ try:
 
         #--------------------LOAD FORECAST DATA FOR REQUESTED VARIABLE--------------------#
         varf_name = file_key[variable]
-        FILE = '{0:s}/{3:s}/forecast_production_{3:s}_{1:d}_{2:d}.nc'.format(dirs['SFE_monthly'],inityear,initmonth,varf_name)
+        FILE = '{0:s}/{3:s}/forecast_production_{3:s}_{1:d}_{2:0>2d}.nc'.format(dirs['SFE_monthly'],inityear,initmonth,varf_name)
         
         ds = xr.open_dataset(FILE)
 

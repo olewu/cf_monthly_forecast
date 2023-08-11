@@ -27,7 +27,7 @@ from cf_monthly_forecast.smooth2d import box_smooth_2D
 # plotting
 import matplotlib.pyplot as plt
 from cf_monthly_forecast.vis_utils import TWOCOLUMN_WIDTH_INCHES,SubplotFigure
-from mpl_toolkits.basemap import Basemap
+# from mpl_toolkits.basemap import Basemap
 
 # function to send email
 from cf_monthly_forecast.utils import send_email
@@ -54,7 +54,6 @@ nsplines = 4
 
 # get current date during time of running the script:
 today = datetime.today()
-# today = datetime(2022,11,15)
 initmonth = today.month
 inityear = today.year
 
@@ -172,7 +171,7 @@ try:
                         idx = fcmonth-initmonth-1
                         if idx<0:
                             idx += 12
-                        print('\tfcmonth: {0:d} initmonth: {1:d} idx: {2:d}'.format(fcmonth,initmonth,idx))
+                            ('\tfcmonth: {0:d} initmonth: {1:d} idx: {2:d}'.format(fcmonth,initmonth,idx))
                         try:
                             a = ds.variables[model][variablenumber[variable],idx,:,:]
                         except:
@@ -213,8 +212,8 @@ try:
                                 'en': 'Probability of %s %i in the %s tercile (default = 33%%%s)'%(
                                     mstr,
                                     fcyear,
-                                    {'t2':'warmest','pr':'wettest','wsp':'windiest'}[variable],
-                                    (', average = %i%%'%(avg+.5) if area=='GLOBAL' else '')
+                                    {'t2':'warmest','pr':'wettest','wsp':'windiest','msl':'upper pressure','sst':'warmest','snow':'upper snowfall','u10m':'upper u (10m) wind','v10m':'upper v (10m) wind'}[variable],
+								    (', average = %i%%'%(avg+.5) if area=='GLOBAL' else '')
                                 )
                             }[lang]
                         elif model in ('ExceedQ50',):
@@ -237,7 +236,7 @@ try:
                                 t = ', average between %iN and %iN: %i%%'%(glat0,glat1,gavg+.5)
                             title += {
                                 'en': ' will be %s than normal\n(default: 50%%%s)'%(
-                                    {'t2':'warmer','pr':'wetter','wsp':'windier'}[variable],
+                                    {'t2':'warmest','pr':'wettest','wsp':'windiest','msl':'upper pressure','sst':'warmest','snow':'upper snowfall','u10m':'upper u (10m) wind','v10m':'upper v (10m) wind'}[variable],
                                     t
                                 )
                             }[lang]
@@ -246,7 +245,7 @@ try:
                                 'en': 'Probability of %s %i in the %s tercile (default = 33%%%s)'%(
                                     mstr,
                                     fcyear,
-                                    {'t2':'coldest','pr':'driest','wsp':'calmest'}[variable],
+                                    {'t2':'warmest','pr':'wettest','wsp':'windiest','msl':'upper pressure','sst':'warmest','snow':'upper snowfall','u10m':'upper u (10m) wind','v10m':'upper v (10m) wind'}[variable],
                                     (', average = %i%%'%(avg+.5) if area=='GLOBAL' else '')
                                 )
                             }[lang]
