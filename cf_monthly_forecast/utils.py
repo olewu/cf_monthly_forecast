@@ -6,7 +6,7 @@ import os
 import cf_monthly_forecast.monthly_fc_input as mfin
 import cf_monthly_forecast.subdaily_fc_input as sdfin
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from glob import glob
 
 import numpy as np
@@ -117,6 +117,48 @@ def sysnum_from_grib(grib_file):
     system_number = re.search('\d+',out_str.split('\n')[2]).group()
 
     return system_number
+
+def latest_fc_system(MODEL,YEAR,MONTH):
+    """
+    search the database for system number of the last initialization of a given model
+    used to be able to download hindcasts before forecasts are released
+    """
+    system_numbers = sys_numbers_xmonths_ago(MODEL,YEAR,MONTH,1)
+    if len(set(system_numbers)) > 1:
+        print('Warning: conflicting system numbers found for initialization date {0:}-{1:}\n{2:}\nReturning only the first ({:})'.format(MONTH,YEAR,set(system_numbers),system_numbers[0]))
+    # add exception for ukmo model since it is known that the system number is updated every year and every forecast gets a new hindcast set:
+    sys_num = system_numbers[0]
+    if MODEL == 'ukmo':
+        print('treating ukmo as special case not implemented yet') #TODO
+        system_numbers_prev_year = sys_numbers_xmonths_ago(MODEL,YEAR,MONTH,12)
+        if int(system_numbers_prev_year[0]) == int(sys_num):
+            print('adding 1 to model version')
+            sys_num = str(int(sys_num) + 1)
+
+    return sys_num
+
+def sys_numbers_xmonths_ago(MODEL,YEAR,MONTH,n_mons):
+    """
+    search the database for system number of the last initialization of a given model
+    used to be able to download hindcasts before forecasts are released
+    """
+    previous_forecast_date = add_month(datetime(int(YEAR),int(MONTH),1),-n_mons)
+    pfd_string = previous_forecast_date.strftime('%Y_%m')
+    search_string = '*_{0:s}_*_{1:s}.nc'.format(MODEL,pfd_string)
+    search_dir = os.path.join(dirs['cds_data'],'*','*',MODEL,'*',search_string)
+    search_res = glob(search_dir)
+    system_numbers = [re.search('{0:s}_(\d+)_{1:d}'.format(MODEL,previous_forecast_date.year),sr).groups()[0] for sr in search_res]
+    return system_numbers
+
+
+def add_month(datetime_object,n_months):
+    """
+    
+    """
+    nmon = (datetime_object.month + n_months - 1)%12 + 1
+    nyear = datetime_object.year + (datetime_object.month + n_months - 1)//12
+    datetime_subtract = datetime(nyear,nmon,datetime_object.day)
+    return datetime_subtract
 
 def latest_sys_from_existing(model,year,month,mode='monthly'):
     lookup_path = derive_path(model,mode=mode)
