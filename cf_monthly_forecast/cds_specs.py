@@ -6,7 +6,7 @@ model_init_mode = {
 
 # all available models:
 all_models = ['ecmwf','meteo_france','dwd','cmcc','ukmo','ncep','eccc','jma']
-# Note that the the last three models in this last are last on purpose. They aren't part of the MME as of now, so downloading them has low priority!
+# Note that the the last three models in this are last on purpose. They aren't part of the MME as of now, so downloading them has low priority!
 
 # maximum available lead hour for each system:  
 last_lead_hour = dict(

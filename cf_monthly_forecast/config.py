@@ -26,13 +26,13 @@ dirs = dict(
 )
 
 model_init_mode = {
-    'burst'     : ['cmcc','ecmwf','eccc','dwd','meteo_france'],
+    'burst'     : ['ecmwf','meteo_france','dwd','cmcc','eccc'],
     'lagged'    : ['ukmo','jma','ncep']
 }
 
 # all available models:
 all_models = ['ecmwf','meteo_france','dwd','cmcc','ukmo','ncep','eccc','jma']
-# Note that the the last three models in this last are last on purpose. They aren't part of the MME as of now, so downloading them has low priority!
+# Note that the the last three models in this list are last on purpose. They aren't part of the MME as of now, so downloading them has low priority!
 
 # system numbers assigned by Alex in production files:
 dt_systems_lookups = {
