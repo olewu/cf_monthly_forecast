@@ -8,9 +8,8 @@ import sys
 import json
 
 from cf_monthly_forecast.config import *
-from cf_monthly_forecast.utils import quadrant_probs,find_closest_gp, get_station_stats, predict_from_monthly_trend, get_station_data
+from cf_monthly_forecast.utils import quadrant_probs,find_closest_gp, get_station_stats, predict_from_monthly_trend, get_station_data, send_email
 from cf_monthly_forecast.plots import bivariate_fc_plot,derive_abs_limits
-from cf_monthly_forecast.utils import send_email
 
 # INIT_MON = initmonth
 # INIT_YEA = inityear
@@ -41,7 +40,7 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
 
     # find closest grid points to the required ones:
     closest_gp_dict = find_closest_gp(locations,mode=MODE)
-    # closest_gp_dict_ = find_closest_gp(locations,mode=MODE,vers='new')
+    # closest_gp_dict_ = find_closest_gp(locations,mode=MODE,vers='old')
 
     for (loc_name,latlon) in closest_gp_dict.items():
         # find closest grid point:
@@ -154,7 +153,12 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
                 x_fac = 1
                 # standardize:
                 fc_x_pass = ((x_loc_lea.forecast - x_loc_lea.climatology)/x_loc_lea.sd)*x_sd + clim_x_pass
+                # if variable is precipitation, set all negative precip amounts to zero (happens frequently due bias correction)
+                if x_var == 'total_precipitation':
+                    fc_x_pass[fc_x_pass < 0] = 0
                 fc_y_pass = ((y_loc_lea.forecast - y_loc_lea.climatology)/y_loc_lea.sd)*y_sd + clim_y_pass
+                if y_var == 'total_precipitation':
+                    fc_y_pass[fc_y_pass < 0] = 0
 
                 x_pred_trend = stat_trend.sel(month=FC_MON,year=fc_date.year)[x_var]
                 y_pred_trend = stat_trend.sel(month=FC_MON,year=fc_date.year)[y_var]
