@@ -236,7 +236,7 @@ try:
                                 t = ', average between %iN and %iN: %i%%'%(glat0,glat1,gavg+.5)
                             title += {
                                 'en': ' will be %s than normal\n(default: 50%%%s)'%(
-                                    {'t2':'warmest','pr':'wettest','wsp':'windiest','msl':'upper pressure','sst':'warmest','snow':'upper snowfall','u10m':'upper u (10m) wind','v10m':'upper v (10m) wind'}[variable],
+                                    {'t2':'warmer','pr':'wetter','wsp':'windier','msl':'upper pressure','sst':'warmer','snow':'upper snowfall','u10m':'upper u (10m) wind','v10m':'upper v (10m) wind'}[variable],
                                     t
                                 )
                             }[lang]
@@ -245,7 +245,7 @@ try:
                                 'en': 'Probability of %s %i in the %s tercile (default = 33%%%s)'%(
                                     mstr,
                                     fcyear,
-                                    {'t2':'warmest','pr':'wettest','wsp':'windiest','msl':'upper pressure','sst':'warmest','snow':'upper snowfall','u10m':'upper u (10m) wind','v10m':'upper v (10m) wind'}[variable],
+                                    {'t2':'coldest','pr':'driest','wsp':'least windy','msl':'lower pressure','sst':'coldest','snow':'lower snowfall','u10m':'lower u (10m) wind','v10m':'lower v (10m) wind'}[variable],
                                     (', average = %i%%'%(avg+.5) if area=='GLOBAL' else '')
                                 )
                             }[lang]
