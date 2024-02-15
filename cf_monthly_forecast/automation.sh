@@ -2,9 +2,11 @@
 # check if the script has already successfully executed this month (which is the case if the below file exists),
 # only execute if the file does not exist
 
+conda_path=/nird/home/owul/miniforge3
+
 if [ ! -e /projects/NS9001K/owul/projects/cf_monthly_forecast/data/index/complete_biv_$(date +%Y)-$(date +%m).ix ]
 then
-source $(conda info | grep -i 'base environment' | awk '{print $4}')/etc/profile.d/conda.sh
+source $conda_path/etc/profile.d/conda.sh
 # activate the environment:
 conda activate cf_fresh
 # run plotting routine:
@@ -14,7 +16,7 @@ fi
 # Conduct a similar check for the probability plots.
 if [ ! -e /projects/NS9001K/owul/projects/cf_monthly_forecast/data/index/complete_$(date +%Y)-$(date +%m).ix ]
 then
-source $(conda info | grep -i 'base environment' | awk '{print $4}')/etc/profile.d/conda.sh
+source $conda_path/etc/profile.d/conda.sh
 # activate the environment:
 conda activate cf_fresh
 # run plotting routine:
@@ -27,7 +29,7 @@ fi
 
 if [ ! -e /projects/NS9001K/owul/projects/cf_monthly_forecast/data/index/complete_anom_$(date +%Y)-$(date +%m).ix ]
 then
-source $(conda info | grep -i 'base environment' | awk '{print $4}')/etc/profile.d/conda.sh
+source $conda_path/etc/profile.d/conda.sh
 # activate the environment:
 conda activate cf_fresh
 # run plotting routine:
