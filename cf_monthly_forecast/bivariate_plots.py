@@ -31,8 +31,8 @@ def bivariate_fc_sequence(x_var,y_var,INIT_MON,INIT_YEA,MODE,ref_clim,locations=
         locations.pop('Trondheim')
     else:
         clim_mean_mode = None
-    x_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:0>2d}.nc4'.format(INIT_MON,INIT_YEA,x_var))
-    y_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:0>2d}.nc4'.format(INIT_MON,INIT_YEA,y_var))
+    x_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:0>2d}.nc'.format(INIT_MON,INIT_YEA,x_var))
+    y_ds = xr.open_dataset(dirs['SFE_monthly'] + '/{2:s}/forecast_production_detailed_{2:s}_{1:d}_{0:0>2d}.nc'.format(INIT_MON,INIT_YEA,y_var))
     
     ds_val = xr.open_dataset(dirs['SFE_validation'] + '/sfe_benchmark.nc4')
 
@@ -202,8 +202,8 @@ if __name__ == '__main__':
     tday = datetime.today()
     inityear,initmonth = tday.year,tday.month
     
-    filename_x = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:0>2d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,x_var)
-    filename_y = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:0>2d}.nc4'.format(dirs['SFE_monthly'],inityear,initmonth,y_var)
+    filename_x = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:0>2d}.nc'.format(dirs['SFE_monthly'],inityear,initmonth,x_var)
+    filename_y = '{0:s}/{3:s}/forecast_production_detailed_{3:s}_{1:d}_{2:0>2d}.nc'.format(dirs['SFE_monthly'],inityear,initmonth,y_var)
 
     # derive set of models in MME from the system dimension of the above file(s):
     with xr.open_dataset(filename_x) as DS:
